@@ -1,4 +1,5 @@
 import type { H3 } from "h3";
+import type { Buffer } from "node:buffer";
 
 export interface SkinTexture {
   url: string;
@@ -182,6 +183,15 @@ export interface BedrockServerStatus {
 
 export type ServerStatus = JavaServerStatus | BedrockServerStatus;
 
+export interface ServerIconResult {
+  host: string;
+  port: number;
+  dataUri: string;
+  base64: string;
+  buffer: Buffer;
+  byteLength: number;
+}
+
 export function fetchServerStatus(
   address: string,
   options?: ServerStatusOptions,
@@ -194,6 +204,10 @@ export function fetchBedrockServerStatus(
   address: string,
   options?: BedrockServerStatusOptions,
 ): Promise<BedrockServerStatus>;
+export function fetchServerIcon(
+  address: string,
+  options?: JavaServerStatusOptions,
+): Promise<ServerIconResult>;
 
 export interface VotifierVoteOptions {
   host: string;

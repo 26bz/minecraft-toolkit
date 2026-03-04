@@ -1,17 +1,21 @@
 {
   "name": "minecraft-toolkit",
   "version": "0.1.3",
-  "description": "Developer toolkit for working with Mojang Minecraft player data, skins, and utilities.",
+  "description": "Minecraft toolkit for Mojang player data, server status probes, and Votifier v1/v2 clients.",
   "keywords": [
     "minecraft",
     "minecraft-api",
     "minecraft-player",
+    "minecraft-server",
     "minecraft-skins",
+    "minecraft-status",
     "minecraft-tools",
     "minecraft-utils",
     "minecraft-uuid",
+    "minecraft-votifier",
     "mojang",
-    "mojang-api"
+    "mojang-api",
+    "votifier"
   ],
   "homepage": "https://github.com/26bz/minecraft-toolkit",
   "bugs": {

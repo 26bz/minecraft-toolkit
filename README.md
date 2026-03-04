@@ -8,7 +8,7 @@
 
 <!-- /automd -->
 
-Lightweight Mojang player utilities (profile, skin, UUID) for Node, Vite, and edge projects.
+Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, Java/Bedrock server status probes, and Votifier (v1/v2) clients that run in Node, Vite, and edge runtimes.
 
 > This toolkit wraps Mojang APIs. Rate limits and availability still apply. Write endpoints (name change, skin upload) are not yet included.
 
@@ -150,6 +150,24 @@ console.log(javaStatus.players.online, bedrockStatus.motd.text);
 
 Both helpers normalize MOTD text, favicon/Base64 icons, latency, and version info. Errors surface as
 `MinecraftToolkitError` with contextual status codes.
+
+### Server Icon Helper
+
+```ts
+import { fetchServerIcon } from "minecraft-toolkit";
+
+const icon = await fetchServerIcon("play.example.net");
+console.log(icon.base64); // "iVBOR..."
+console.log(icon.byteLength); // raw PNG size in bytes
+```
+
+The helper reuses the Java status ping to extract the favicon, returning:
+
+- `dataUri`: ready-to-render `data:image/png;base64,...`
+- `base64`: raw Base64 payload
+- `buffer` + `byteLength` for further processing (e.g., resizing, hashing)
+
+If the server doesn’t expose an icon, it throws `MinecraftToolkitError` (404).
 
 ## Votifier Client (Java)
 

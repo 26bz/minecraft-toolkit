@@ -25,6 +25,7 @@ import {
   fetchBlockedServers,
 } from "../player/account/index.js";
 import { fetchServerStatus } from "../server/status.js";
+import { fetchServerIcon } from "../server/icon.js";
 import { normalizeAddress, validatePort } from "../utils/validation.js";
 
 function requireRouterParam(event, key, message) {
@@ -108,6 +109,28 @@ export function createPlayerHandlers() {
 
   const blockedServersHandler = defineHandler(async () => fetchBlockedServers());
 
+  const serverIconHandler = defineHandler(async (event) => {
+    const address = normalizeAddress(
+      requireRouterParam(event, "address", "Server address parameter is required"),
+    );
+    const query = getQuery(event);
+    const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
+    const timeoutMs =
+      typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
+    const protocolVersion =
+      typeof query.protocolVersion === "string"
+        ? Number.parseInt(query.protocolVersion, 10)
+        : undefined;
+
+    const icon = await fetchServerIcon(address, {
+      port,
+      timeoutMs,
+      protocolVersion,
+    });
+
+    return icon.buffer;
+  });
+
   const serverStatusHandler = defineHandler(async (event) => {
     const address = normalizeAddress(
       requireRouterParam(event, "address", "Server address parameter is required"),
@@ -144,6 +167,7 @@ export function createPlayerHandlers() {
     giftCodeValidationHandler,
     blockedServersHandler,
     serverStatusHandler,
+    serverIconHandler,
   };
 }
 
@@ -201,6 +225,10 @@ export function createPlayerApp(options = {}) {
 
   app.get("/server/:address/status", handlers.serverStatusHandler, {
     meta: { category: "server", resource: "status" },
+  });
+
+  app.get("/server/:address/icon", handlers.serverIconHandler, {
+    meta: { category: "server", resource: "icon" },
   });
 
   return { app, handlers };
