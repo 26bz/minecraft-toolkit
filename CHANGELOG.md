@@ -1,6 +1,27 @@
 # Changelog
 
 
+## v0.1.4
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v0.1.3...v0.1.4)
+
+### 🚀 Enhancements
+
+- SendVotifierVote function ([6ba8dfe](https://github.com/26bz/minecraft-toolkit/commit/6ba8dfe))
+- FetchServerIcon fuction ([3089eb5](https://github.com/26bz/minecraft-toolkit/commit/3089eb5))
+
+### 🩹 Fixes
+
+- Ship bundled typings and clean exports ([46553b7](https://github.com/26bz/minecraft-toolkit/commit/46553b7))
+
+### 🏡 Chore
+
+- **release:** V0.1.3 ([5a85de0](https://github.com/26bz/minecraft-toolkit/commit/5a85de0))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v0.1.3
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v0.1.2...v0.1.3)
