@@ -11,6 +11,7 @@ export const PACKAGE_METADATA = {
 
 export const DEFAULT_JAVA_PORT = 25565;
 export const DEFAULT_BEDROCK_PORT = 19132;
+export const DEFAULT_VOTIFIER_PORT = 8192;
 export const DEFAULT_CACHE_TTL_SECONDS = 30;
 export const DEFAULT_TIMEOUT_MS = 5000;
 export const DEFAULT_PROTOCOL_VERSION = 760; // Minecraft 1.20.4

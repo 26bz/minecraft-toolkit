@@ -182,7 +182,10 @@ export interface BedrockServerStatus {
 
 export type ServerStatus = JavaServerStatus | BedrockServerStatus;
 
-export function fetchServerStatus(address: string, options?: ServerStatusOptions): Promise<ServerStatus>;
+export function fetchServerStatus(
+  address: string,
+  options?: ServerStatusOptions,
+): Promise<ServerStatus>;
 export function fetchJavaServerStatus(
   address: string,
   options?: JavaServerStatusOptions,
@@ -191,6 +194,27 @@ export function fetchBedrockServerStatus(
   address: string,
   options?: BedrockServerStatusOptions,
 ): Promise<BedrockServerStatus>;
+
+export interface VotifierVoteOptions {
+  host: string;
+  port?: number;
+  publicKey: string;
+  serviceName: string;
+  username: string;
+  address: string;
+  timestamp?: number | Date;
+  timeoutMs?: number;
+  token?: string;
+  protocol?: "auto" | "v1" | "v2";
+}
+
+export interface VotifierVoteResult {
+  acknowledged: boolean;
+  version: string | null;
+  protocol: "v1" | "v2";
+}
+
+export function sendVotifierVote(options: VotifierVoteOptions): Promise<VotifierVoteResult>;
 
 export interface PlayerHandlers {
   profileHandler: any;

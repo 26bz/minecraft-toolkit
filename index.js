@@ -33,3 +33,4 @@ export {
   convertPrefix,
   getMaps,
 } from "./src/utils/formatting.js";
+export { sendVotifierVote } from "./src/server/votifier/index.js";

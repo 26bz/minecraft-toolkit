@@ -151,6 +151,30 @@ console.log(javaStatus.players.online, bedrockStatus.motd.text);
 Both helpers normalize MOTD text, favicon/Base64 icons, latency, and version info. Errors surface as
 `MinecraftToolkitError` with contextual status codes.
 
+## Votifier Client (Java)
+
+Send vote notifications to classic Votifier v1 (RSA public key) and NuVotifier v2 (token/HMAC) servers without re-implementing either protocol.
+
+```ts
+import { sendVotifierVote } from "minecraft-toolkit";
+
+const result = await sendVotifierVote({
+  host: "votifier.myserver.net",
+  port: 8192, // defaults to 8192 if omitted
+  publicKey: process.env.VOTIFIER_PUBLIC_KEY!, // v1 servers
+  serviceName: "MyTopList",
+  username: "26bz",
+  address: "198.51.100.42",
+  token: listingSiteConfig.token, // v2 servers (optional)
+  protocol: "auto", // let the handshake decide between v1/v2
+});
+
+console.log(result.acknowledged, result.version, result.protocol);
+```
+
+- Provide either a legacy RSA public key (for protocol v1) **or** a NuVotifier token (protocol v2). Server listing sites typically store each server's token and pass it here; `protocol: "auto"` will select the right flow based on the handshake.
+- `timestamp` accepts a `Date` or millisecond value (default: `Date.now()`). All failures bubble as `MinecraftToolkitError`.
+
 ## Minecraft Formatting Renderer
 
 Convert legacy `§` or `&` codes into safe HTML fragments or CSS class spans.

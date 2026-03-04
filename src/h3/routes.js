@@ -1,4 +1,12 @@
-import { H3, defineHandler, definePlugin, readBody, getQuery } from "h3";
+import {
+  H3,
+  defineHandler,
+  definePlugin,
+  readBody,
+  getQuery,
+  getRouterParam,
+  getRequestHeader,
+} from "h3";
 import { MinecraftToolkitError } from "../errors.js";
 import {
   fetchPlayerProfile,
@@ -19,8 +27,8 @@ import {
 import { fetchServerStatus } from "../server/status.js";
 import { normalizeAddress, validatePort } from "../utils/validation.js";
 
-function requireParam(event, key, message) {
-  const value = event.context.params?.[key];
+function requireRouterParam(event, key, message) {
+  const value = getRouterParam(event, key);
   if (!value) {
     throw new MinecraftToolkitError(message, { statusCode: 400 });
   }
@@ -29,37 +37,37 @@ function requireParam(event, key, message) {
 
 export function createPlayerHandlers() {
   const profileHandler = defineHandler(async (event) => {
-    const username = requireParam(event, "username", "Username parameter is required");
+    const username = requireRouterParam(event, "username", "Username parameter is required");
     return fetchPlayerProfile(username);
   });
 
   const skinHandler = defineHandler(async (event) => {
-    const username = requireParam(event, "username", "Username parameter is required");
+    const username = requireRouterParam(event, "username", "Username parameter is required");
     return fetchPlayerSkin(username);
   });
 
   const summaryHandler = defineHandler(async (event) => {
-    const username = requireParam(event, "username", "Username parameter is required");
+    const username = requireRouterParam(event, "username", "Username parameter is required");
     return fetchPlayerSummary(username);
   });
 
   const uuidHandler = defineHandler(async (event) => {
-    const username = requireParam(event, "username", "Username parameter is required");
+    const username = requireRouterParam(event, "username", "Username parameter is required");
     return fetchPlayerUUID(username);
   });
 
   const resolverHandler = defineHandler(async (event) => {
-    const input = requireParam(event, "input", "Username or UUID parameter is required");
+    const input = requireRouterParam(event, "input", "Username or UUID parameter is required");
     return resolvePlayer(input);
   });
 
   const nameHistoryHandler = defineHandler(async (event) => {
-    const uuid = requireParam(event, "uuid", "UUID parameter is required");
+    const uuid = requireRouterParam(event, "uuid", "UUID parameter is required");
     return fetchNameHistory(uuid);
   });
 
   const existsHandler = defineHandler(async (event) => {
-    const username = requireParam(event, "username", "Username parameter is required");
+    const username = requireRouterParam(event, "username", "Username parameter is required");
     const exists = await playerExists(username);
     return { username, exists };
   });
@@ -82,7 +90,7 @@ export function createPlayerHandlers() {
   });
 
   const nameAvailabilityHandler = defineHandler(async (event) => {
-    const name = requireParam(event, "name", "Name parameter is required");
+    const name = requireRouterParam(event, "name", "Name parameter is required");
     const token = requireAccessToken(event);
     return checkNameAvailability(name, token);
   });
@@ -102,7 +110,7 @@ export function createPlayerHandlers() {
 
   const serverStatusHandler = defineHandler(async (event) => {
     const address = normalizeAddress(
-      requireParam(event, "address", "Server address parameter is required"),
+      requireRouterParam(event, "address", "Server address parameter is required"),
     );
     const query = getQuery(event);
     const edition = typeof query.edition === "string" ? query.edition : undefined;
@@ -204,7 +212,7 @@ export const playerPlugin = definePlugin((app) => {
 });
 
 function requireAccessToken(event) {
-  const header = event.req?.headers?.get?.("authorization") ?? "";
+  const header = getRequestHeader(event, "authorization") ?? "";
   if (!header.toLowerCase().startsWith("bearer ")) {
     throw new MinecraftToolkitError("Authorization header with Bearer token is required", {
       statusCode: 401,
