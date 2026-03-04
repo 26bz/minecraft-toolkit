@@ -1,4 +1,4 @@
-import { H3, defineHandler, definePlugin, readBody } from "h3";
+import { H3, defineHandler, definePlugin, readBody, getQuery } from "h3";
 import { MinecraftToolkitError } from "../errors.js";
 import {
   fetchPlayerProfile,
@@ -16,6 +16,8 @@ import {
   validateGiftCode,
   fetchBlockedServers,
 } from "../player/account/index.js";
+import { fetchServerStatus } from "../server/status.js";
+import { normalizeAddress, validatePort } from "../utils/validation.js";
 
 function requireParam(event, key, message) {
   const value = event.context.params?.[key];
@@ -66,7 +68,9 @@ export function createPlayerHandlers() {
     const body = (await readBody(event)) ?? {};
     const usernames = Array.isArray(body.usernames) ? body.usernames : null;
     if (!usernames || usernames.length === 0) {
-      throw new MinecraftToolkitError("Body must include a non-empty usernames array", { statusCode: 400 });
+      throw new MinecraftToolkitError("Body must include a non-empty usernames array", {
+        statusCode: 400,
+      });
     }
     const delayMs = typeof body.delayMs === "number" ? body.delayMs : undefined;
     return fetchPlayers(usernames, { delayMs });
@@ -96,6 +100,28 @@ export function createPlayerHandlers() {
 
   const blockedServersHandler = defineHandler(async () => fetchBlockedServers());
 
+  const serverStatusHandler = defineHandler(async (event) => {
+    const address = normalizeAddress(
+      requireParam(event, "address", "Server address parameter is required"),
+    );
+    const query = getQuery(event);
+    const edition = typeof query.edition === "string" ? query.edition : undefined;
+    const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
+    const timeoutMs =
+      typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
+    const protocolVersion =
+      typeof query.protocolVersion === "string"
+        ? Number.parseInt(query.protocolVersion, 10)
+        : undefined;
+
+    return fetchServerStatus(address, {
+      edition,
+      port,
+      timeoutMs,
+      protocolVersion,
+    });
+  });
+
   return {
     profileHandler,
     skinHandler,
@@ -109,6 +135,7 @@ export function createPlayerHandlers() {
     nameAvailabilityHandler,
     giftCodeValidationHandler,
     blockedServersHandler,
+    serverStatusHandler,
   };
 }
 
@@ -164,6 +191,10 @@ export function createPlayerApp(options = {}) {
     meta: { category: "account", resource: "blocked-servers" },
   });
 
+  app.get("/server/:address/status", handlers.serverStatusHandler, {
+    meta: { category: "server", resource: "status" },
+  });
+
   return { app, handlers };
 }
 
@@ -175,7 +206,9 @@ export const playerPlugin = definePlugin((app) => {
 function requireAccessToken(event) {
   const header = event.req?.headers?.get?.("authorization") ?? "";
   if (!header.toLowerCase().startsWith("bearer ")) {
-    throw new MinecraftToolkitError("Authorization header with Bearer token is required", { statusCode: 401 });
+    throw new MinecraftToolkitError("Authorization header with Bearer token is required", {
+      statusCode: 401,
+    });
   }
   const token = header.slice(7).trim();
   if (!token) {

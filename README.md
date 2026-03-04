@@ -128,6 +128,50 @@ const blockedServer = await fetchBlockedServers(); // no token required
 
 `validateGiftCode` returns `true`/`false` for 200/404 responses without throwing.
 
+## Server Status Helpers
+
+Probe Java and Bedrock servers without bringing your own RakNet/TCP logic.
+
+```ts
+import {
+  fetchServerStatus,
+  fetchJavaServerStatus,
+  fetchBedrockServerStatus,
+} from "minecraft-toolkit";
+
+const javaStatus = await fetchJavaServerStatus({ host: "mc.hypixel.net", port: 25565 });
+const bedrockStatus = await fetchBedrockServerStatus({ host: "play.example.net", port: 19132 });
+
+// fetchServerStatus picks the right probe based on the `edition` field
+const autoStatus = await fetchServerStatus({ host: "my.realm.net", edition: "bedrock" });
+
+console.log(javaStatus.players.online, bedrockStatus.motd.text);
+```
+
+Both helpers normalize MOTD text, favicon/Base64 icons, latency, and version info. Errors surface as
+`MinecraftToolkitError` with contextual status codes.
+
+## Minecraft Formatting Renderer
+
+Convert legacy `§` or `&` codes into safe HTML fragments or CSS class spans.
+
+```ts
+import { toHTML, generateCSS, stripCodes, hasCodes, convertPrefix } from "minecraft-toolkit";
+
+const motd = "§aWelcome §lHeroes§r!";
+
+const inline = toHTML(motd); // <span style="color: #55ff55">Welcome ...</span>
+
+const classes = toHTML(motd, { mode: "class", classPrefix: "mc" });
+const css = generateCSS(); // drop into a <style> tag
+
+stripCodes(motd); // "Welcome Heroes!"
+hasCodes(motd); // true
+convertPrefix("&aHi", "toSection"); // "§aHi"
+```
+
+`getMaps()` exposes the color and format metadata if you want to build custom renderers.
+
 ## License
 
 Published under the [MIT](https://github.com/26bz/minecraft-toolkit/blob/main/LICENSE) license.

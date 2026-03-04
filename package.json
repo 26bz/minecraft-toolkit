@@ -27,7 +27,6 @@
     "type": "git",
     "url": "https://github.com/26bz/minecraft-toolkit"
   },
-  "packageManager": "pnpm@10.30.2",
   "files": [
     "src",
     "index.js",
@@ -72,5 +71,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "packageManager": "pnpm@10.30.2"
 }

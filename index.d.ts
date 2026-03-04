@@ -82,6 +82,39 @@ export function normalizeUUID(uuid: string): string;
 export function uuidWithDashes(uuid: string): string;
 export function uuidWithoutDashes(uuid: string): string;
 
+export type FormattingMode = "inline" | "class";
+
+export interface FormattingOptions {
+  mode?: FormattingMode;
+  classPrefix?: string;
+  animationName?: string;
+  obfuscatedSpeedMs?: number;
+  escapeHtml?: boolean;
+}
+
+export interface FormattingColorMeta {
+  name: string;
+  classSuffix: string;
+  hex: string;
+}
+
+export interface FormattingFormatMeta {
+  name: string;
+  classSuffix: string;
+}
+
+export interface FormattingMaps {
+  colors: Record<string, FormattingColorMeta>;
+  formats: Record<string, FormattingFormatMeta>;
+}
+
+export function toHTML(input: string, options?: FormattingOptions): string;
+export function stripCodes(input: string): string;
+export function generateCSS(options?: FormattingOptions): string;
+export function hasCodes(input: string): boolean;
+export function convertPrefix(input: string, direction?: "toSection" | "toAmpersand"): string;
+export function getMaps(): FormattingMaps;
+
 export function getSkinURL(profile: PlayerProfile | PlayerSkin): string | null;
 export function getCapeURL(profile: PlayerProfile | PlayerSkin): string | null;
 export function getSkinModel(profile: PlayerProfile | PlayerSkin): "default" | "slim";

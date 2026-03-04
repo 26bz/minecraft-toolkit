@@ -40,7 +40,8 @@ function mockFetchSequence(responses) {
       });
     }
     const body = [204, 205, 304].includes(status) ? null : JSON.stringify(entry.json ?? null);
-    const responseHeaders = body === null ? headers : { "content-type": "application/json", ...headers };
+    const responseHeaders =
+      body === null ? headers : { "content-type": "application/json", ...headers };
     return new Response(body, {
       status,
       headers: responseHeaders,

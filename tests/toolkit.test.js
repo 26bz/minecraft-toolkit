@@ -15,6 +15,12 @@ import {
   playerExists,
   hasSkinChanged,
   resolvePlayer,
+  toHTML,
+  stripCodes,
+  generateCSS,
+  hasCodes,
+  convertPrefix,
+  getMaps,
 } from "../index.js";
 import {
   uuidWithDashes,
@@ -251,5 +257,42 @@ describe("texture helpers", () => {
     expect(getCapeURL(profile)).toContain("cape");
     expect(getSkinModel(profile)).toBe("slim");
     expect(extractTextureHash(profile.skin.url)).toBe("abc");
+  });
+});
+
+describe("formatting helpers", () => {
+  it("renders inline HTML with proper resets", () => {
+    const rendered = toHTML("§aHello §lWorld§r!", { mode: "inline" });
+    expect(rendered).toContain("color: #55ff55");
+    expect(rendered).toContain("font-weight: 700");
+    expect(rendered.endsWith("!</span>!")).toBe(false);
+    expect(rendered.endsWith("!"));
+  });
+
+  it("renders class-based HTML and generates CSS", () => {
+    const rendered = toHTML("&bHi &kobfuscated", { mode: "class", classPrefix: "demo" });
+    expect(rendered).toContain('class="demo-segment demo-color-aqua"');
+    expect(rendered).toContain("demo-format-obfuscated");
+
+    const css = generateCSS({ classPrefix: "demo", animationName: "demo-anim" });
+    expect(css).toContain(".demo-color-aqua");
+    expect(css).toContain("@keyframes demo-anim");
+  });
+
+  it("strips and detects formatting codes", () => {
+    const input = "§cError §lBold";
+    expect(stripCodes(input)).toBe("Error Bold");
+    expect(hasCodes(input)).toBe(true);
+    expect(hasCodes("Plain text")).toBe(false);
+  });
+
+  it("converts prefixes and exposes maps", () => {
+    const converted = convertPrefix("§aHi", "toAmpersand");
+    expect(converted).toBe("&aHi");
+    expect(convertPrefix(converted, "toSection")).toBe("§aHi");
+
+    const maps = getMaps();
+    expect(maps.colors.a.hex).toBe("#55ff55");
+    expect(maps.formats.l.classSuffix).toBe("bold");
   });
 });
