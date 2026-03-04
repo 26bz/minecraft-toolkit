@@ -1,0 +1,75 @@
+{
+  "name": "minecraft-toolkit",
+  "version": "0.1.0",
+  "description": "Developer toolkit for working with Mojang Minecraft player data, skins, and utilities.",
+  "keywords": [
+    "minecraft",
+    "minecraft-api",
+    "minecraft-player",
+    "minecraft-skins",
+    "minecraft-tools",
+    "minecraft-utils",
+    "minecraft-uuid",
+    "mojang",
+    "mojang-api"
+  ],
+  "homepage": "https://github.com/26bz/minecraft-toolkit",
+  "bugs": {
+    "url": "https://github.com/26bz/minecraft-toolkit/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "26bz",
+    "email": "26bz@proton.me",
+    "url": "https://26bz.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/26bz/minecraft-toolkit"
+  },
+  "files": [
+    "src",
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./index.d.ts",
+  "exports": {
+    ".": "./index.js",
+    "./player": "./src/player/profile/index.js",
+    "./skin": "./src/player/skin.js",
+    "./identity": "./src/player/identity/index.js",
+    "./textures": "./src/player/textures.js"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "prepare": "husky install",
+    "docs:sync": "automd"
+  },
+  "dependencies": {
+    "h3": "2.0.1-rc.14",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "automd": "^0.3.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "pnpm run lint"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
