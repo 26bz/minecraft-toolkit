@@ -30,6 +30,7 @@
   "files": [
     "src",
     "index.js",
+    "index.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -37,11 +38,10 @@
   "sideEffects": false,
   "types": "./index.d.ts",
   "exports": {
-    ".": "./index.js",
-    "./player": "./src/player/profile/index.js",
-    "./skin": "./src/player/skin.js",
-    "./identity": "./src/player/identity/index.js",
-    "./textures": "./src/player/textures.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
   },
   "scripts": {
     "test": "vitest",

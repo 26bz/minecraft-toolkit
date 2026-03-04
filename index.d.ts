@@ -120,6 +120,78 @@ export function getCapeURL(profile: PlayerProfile | PlayerSkin): string | null;
 export function getSkinModel(profile: PlayerProfile | PlayerSkin): "default" | "slim";
 export function extractTextureHash(url: string | null): string | null;
 
+export type ServerEdition = "java" | "bedrock" | "auto";
+
+export interface JavaServerStatusOptions {
+  port?: number;
+  timeoutMs?: number;
+  protocolVersion?: number;
+}
+
+export interface BedrockServerStatusOptions {
+  port?: number;
+  timeoutMs?: number;
+}
+
+export interface ServerStatusOptions extends JavaServerStatusOptions {
+  edition?: ServerEdition;
+  type?: ServerEdition;
+}
+
+export interface JavaServerStatus {
+  edition: "java";
+  online: boolean;
+  host: string;
+  port: number;
+  version: {
+    name?: string | null;
+    protocol?: number | null;
+  } | null;
+  players: {
+    max?: number | null;
+    online?: number | null;
+    sample?: Array<{ name: string; id: string }>;
+  } | null;
+  motd: string | null;
+  favicon: string | null;
+  latencyMs: number | null;
+  raw: Record<string, unknown>;
+}
+
+export interface BedrockServerStatus {
+  edition: "bedrock";
+  online: boolean;
+  host: string;
+  port: number;
+  motd: string;
+  version: {
+    protocol: number;
+    name: string;
+  };
+  players: {
+    online: number;
+    max: number;
+  };
+  serverId: string;
+  map: string;
+  gamemode: string;
+  ipv4Port: number;
+  ipv6Port: number | null;
+  raw: string;
+}
+
+export type ServerStatus = JavaServerStatus | BedrockServerStatus;
+
+export function fetchServerStatus(address: string, options?: ServerStatusOptions): Promise<ServerStatus>;
+export function fetchJavaServerStatus(
+  address: string,
+  options?: JavaServerStatusOptions,
+): Promise<JavaServerStatus>;
+export function fetchBedrockServerStatus(
+  address: string,
+  options?: BedrockServerStatusOptions,
+): Promise<BedrockServerStatus>;
+
 export interface PlayerHandlers {
   profileHandler: any;
   skinHandler: any;
