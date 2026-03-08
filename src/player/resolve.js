@@ -1,5 +1,5 @@
 import { isUUID, normalizeUUID, uuidWithDashes } from "./identity/index.js";
-import { fetchPlayerProfile, fetchPlayerUUID, fetchUsernameByUUID } from "./profile/index.js";
+import { fetchPlayerProfile, fetchUsernameByUUID } from "./profile/index.js";
 
 export async function resolvePlayer(input) {
   if (typeof input !== "string" || input.trim().length === 0) {
@@ -21,9 +21,8 @@ export async function resolvePlayer(input) {
   }
 
   const profile = await fetchPlayerProfile(raw);
-  const { id } = await fetchPlayerUUID(raw);
   return {
-    id: uuidWithDashes(id),
+    id: uuidWithDashes(profile.id),
     name: profile.name,
     skin: profile.skin ?? null,
     cape: profile.cape ?? null,

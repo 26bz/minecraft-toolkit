@@ -71,7 +71,7 @@ export function fetchSkinMetadata(
     sampleRegion?: { x?: number; y?: number; width?: number; height?: number };
   },
 ): Promise<SkinMetadataResult>;
-export function fetchSkinDominantColor(
+export function computeSkinDominantColor(
   url: string,
   region?: { x?: number; y?: number; width?: number; height?: number },
 ): Promise<string | null>;
@@ -136,6 +136,7 @@ export interface BedrockServerStatusOptions {
 
 export interface ServerStatusOptions extends JavaServerStatusOptions {
   edition?: ServerEdition;
+  /** @deprecated Use `edition` instead. */
   type?: ServerEdition;
 }
 
@@ -231,11 +232,20 @@ export interface VotifierVoteResult {
 export function sendVotifierVote(options: VotifierVoteOptions): Promise<VotifierVoteResult>;
 
 export interface PlayerHandlers {
-  profileHandler: any;
-  skinHandler: any;
-  summaryHandler: any;
-  uuidHandler: any;
-  resolverHandler: any;
+  profileHandler: import("h3").EventHandler;
+  skinHandler: import("h3").EventHandler;
+  summaryHandler: import("h3").EventHandler;
+  uuidHandler: import("h3").EventHandler;
+  resolverHandler: import("h3").EventHandler;
+  nameHistoryHandler: import("h3").EventHandler;
+  existsHandler: import("h3").EventHandler;
+  batchHandler: import("h3").EventHandler;
+  nameChangeInfoHandler: import("h3").EventHandler;
+  nameAvailabilityHandler: import("h3").EventHandler;
+  giftCodeValidationHandler: import("h3").EventHandler;
+  blockedServersHandler: import("h3").EventHandler;
+  serverStatusHandler: import("h3").EventHandler;
+  serverIconHandler: import("h3").EventHandler;
 }
 
 export function createPlayerHandlers(): PlayerHandlers;
