@@ -218,17 +218,18 @@ function parseStatusPayload(payload) {
 }
 
 function buildJavaStatus(payload, host, port, latencyMs) {
+  const { version, players, description, favicon, ...rest } = payload;
   return {
     edition: "java",
     online: true,
     host,
     port,
-    version: payload.version ?? null,
-    players: payload.players ?? null,
-    motd: stringifyDescription(payload.description) ?? null,
-    favicon: payload.favicon ?? null,
+    version: version ?? null,
+    players: players ?? null,
+    motd: stringifyDescription(description) ?? null,
+    favicon: favicon ?? null,
     latencyMs,
-    raw: payload,
+    raw: rest,
   };
 }
 

@@ -81,9 +81,10 @@ import {
 
 isValidUsername("26bz"); // true
 uuidWithDashes("069a79f444e94726a5befca90e38aaf5");
-const skinUrl = getSkinURL(await fetchPlayerProfile("26bz"));
+const profile = await fetchPlayerProfile("26bz");
+const skinUrl = getSkinURL(profile);
 const hash = extractTextureHash(skinUrl);
-const model = getSkinModel(skinUrl); // "slim" | "classic"
+const model = getSkinModel(profile); // "slim" | "default"
 ```
 
 ## Skin Metadata & Color Sampling
@@ -139,13 +140,13 @@ import {
   fetchBedrockServerStatus,
 } from "minecraft-toolkit";
 
-const javaStatus = await fetchJavaServerStatus({ host: "mc.hypixel.net", port: 25565 });
-const bedrockStatus = await fetchBedrockServerStatus({ host: "play.example.net", port: 19132 });
+const javaStatus = await fetchJavaServerStatus("mc.hypixel.net", { port: 25565 });
+const bedrockStatus = await fetchBedrockServerStatus("play.example.net", { port: 19132 });
 
 // fetchServerStatus picks the right probe based on the `edition` field
-const autoStatus = await fetchServerStatus({ host: "my.realm.net", edition: "bedrock" });
+const autoStatus = await fetchServerStatus("my.realm.net", { edition: "bedrock" });
 
-console.log(javaStatus.players.online, bedrockStatus.motd.text);
+console.log(javaStatus.players.online, bedrockStatus.motd);
 ```
 
 Both helpers normalize MOTD text, favicon/Base64 icons, latency, and version info. Errors surface as
@@ -179,7 +180,7 @@ import { sendVotifierVote } from "minecraft-toolkit";
 const result = await sendVotifierVote({
   host: "votifier.myserver.net",
   port: 8192, // defaults to 8192 if omitted
-  publicKey: process.env.VOTIFIER_PUBLIC_KEY!, // v1 servers
+  publicKey: process.env.VOTIFIER_PUBLIC_KEY, // v1 servers
   serviceName: "MyTopList",
   username: "26bz",
   address: "198.51.100.42",
