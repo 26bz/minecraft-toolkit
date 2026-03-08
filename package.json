@@ -1,6 +1,6 @@
 {
   "name": "minecraft-toolkit",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Minecraft toolkit for Mojang player data, server status probes, and Votifier v1/v2 clients.",
   "keywords": [
     "minecraft",

@@ -1,6 +1,28 @@
 # Changelog
 
 
+## v1.0.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v0.1.4...v1.0.0)
+
+### 🚀 Enhancements
+
+- SendVotifierVote function ([6ba8dfe](https://github.com/26bz/minecraft-toolkit/commit/6ba8dfe))
+- FetchServerIcon fuction ([3089eb5](https://github.com/26bz/minecraft-toolkit/commit/3089eb5))
+
+### 🩹 Fixes
+
+- Type mismatch & ipv6 parsing ([75d903e](https://github.com/26bz/minecraft-toolkit/commit/75d903e))
+- Deduplicate raw field in JavaServerStatus ([59da31d](https://github.com/26bz/minecraft-toolkit/commit/59da31d))
+
+### 🏡 Chore
+
+- **release:** V0.1.4 ([dddb835](https://github.com/26bz/minecraft-toolkit/commit/dddb835))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v0.1.4
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v0.1.3...v0.1.4)
