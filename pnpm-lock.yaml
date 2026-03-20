@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       h3:
-        specifier: 2.0.1-rc.16
-        version: 2.0.1-rc.16(crossws@0.4.4(srvx@0.11.12))
+        specifier: 2.0.1-rc.17
+        version: 2.0.1-rc.17(crossws@0.4.4(srvx@0.11.12))
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
@@ -1029,8 +1029,8 @@ packages:
     resolution: {integrity: sha512-0Ia46fDOaT7k4og1PDW4YbodWWr3scS2vAr2lTbsplOt2WkKp0vQbkI9wKis/T5LV/dqPjO3bpS/z6GTJB82LA==}
     engines: {node: '>=18'}
 
-  h3@2.0.1-rc.16:
-    resolution: {integrity: sha512-h+pjvyujdo9way8qj6FUbhaQcHlR8FEq65EhTX9ViT5pK8aLj68uFl4hBkF+hsTJAH+H1END2Yv6hTIsabGfag==}
+  h3@2.0.1-rc.17:
+    resolution: {integrity: sha512-9rPJs68qMj7HJH78z7uSIAw6rl3EElLdVSirTeAf6B5ogwiFVIr9AKMMS4u00Gp8DYIPnnjtw3ZWN7EkYcPBrQ==}
     engines: {node: '>=20.11.1'}
     hasBin: true
     peerDependencies:
@@ -2297,7 +2297,7 @@ snapshots:
       slash: 5.1.0
       unicorn-magic: 0.3.0
 
-  h3@2.0.1-rc.16(crossws@0.4.4(srvx@0.11.12)):
+  h3@2.0.1-rc.17(crossws@0.4.4(srvx@0.11.12)):
     dependencies:
       rou3: 0.8.1
       srvx: 0.11.12
