@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v1.0.1
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.0.0...v1.0.1)
+
+### 🏡 Chore
+
+- Bump h3 ([2638f85](https://github.com/26bz/minecraft-toolkit/commit/2638f85))
+- Bump deps ([55893f7](https://github.com/26bz/minecraft-toolkit/commit/55893f7))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v1.0.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v0.1.4...v1.0.0)
