@@ -59,16 +59,16 @@
     "docs:sync": "automd"
   },
   "dependencies": {
-    "h3": "2.0.1-rc.16",
+    "h3": "2.0.1-rc.20",
     "pngjs": "^7.0.0"
   },
   "devDependencies": {
-    "automd": "^0.3.2",
+    "automd": "^0.4.3",
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.2",
-    "oxfmt": "^0.36.0",
-    "oxlint": "^1.51.0",
-    "vitest": "^4.0.18"
+    "lint-staged": "^16.4.0",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "vitest": "^4.1.2"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": "pnpm run lint"
