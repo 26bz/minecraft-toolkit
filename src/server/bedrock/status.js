@@ -80,6 +80,14 @@ export async function fetchBedrockServerStatus(address, options = {}) {
   });
 }
 
+function parseBedrockInt(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const n = Number.parseInt(value, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 function buildBedrockPingPacket(timestamp, clientGuid) {
   const buffer = Buffer.alloc(1 + 8 + 16 + 8);
   let offset = 0;
@@ -116,12 +124,12 @@ function parseBedrockStatus(message, host, port) {
     throw new MinecraftToolkitError("Unexpected Bedrock edition identifier");
   }
 
-  const protocol = Number.parseInt(parts[2] ?? "0", 10) || 0;
+  const protocol = parseBedrockInt(parts[2]) ?? 0;
   const versionName = parts[3] ?? "";
-  const onlinePlayers = Number.parseInt(parts[4] ?? "0", 10) || 0;
-  const maxPlayers = Number.parseInt(parts[5] ?? "0", 10) || 0;
-  const ipv4Port = Number.parseInt(parts[9] ?? `${port}`, 10) || port;
-  const ipv6Port = parts[10] ? Number.parseInt(parts[10], 10) || null : null;
+  const onlinePlayers = parseBedrockInt(parts[4]) ?? 0;
+  const maxPlayers = parseBedrockInt(parts[5]) ?? 0;
+  const ipv4Port = parseBedrockInt(parts[9]) ?? port;
+  const ipv6Port = parts[10] !== undefined ? parseBedrockInt(parts[10]) : null;
 
   return {
     edition: "bedrock",

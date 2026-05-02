@@ -114,14 +114,10 @@ describe("h3 integration", () => {
     expect(body.id).toBe(profileJson.id);
   });
 
-  it("serves name history route", async () => {
-    mockFetchSequence([{ json: [{ name: "Notch", changedToAt: null }] }]);
-
+  it("name history route returns 410 (Mojang API removed)", async () => {
     const { app } = createPlayerApp();
     const response = await app.request(`/player/${profileJson.id}/names`);
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body).toEqual([{ name: "Notch", changedAt: null }]);
+    expect(response.status).toBe(410);
   });
 
   it("serves exists route", async () => {

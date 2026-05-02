@@ -60,7 +60,7 @@ export async function computeSkinDominantColor(url, region = HEAD_REGION) {
 async function fetchPng(url) {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new MinecraftToolkitError(`Unable to load skin texture: ${url}`, {
+    throw new MinecraftToolkitError("Unable to load skin texture", {
       statusCode: response.status,
     });
   }

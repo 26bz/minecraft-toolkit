@@ -1,9 +1,12 @@
+import { MinecraftToolkitError } from "../errors.js";
 import { isUUID, normalizeUUID, uuidWithDashes } from "./identity/index.js";
 import { fetchPlayerProfile, fetchUsernameByUUID } from "./profile/index.js";
 
 export async function resolvePlayer(input) {
   if (typeof input !== "string" || input.trim().length === 0) {
-    throw new TypeError("resolvePlayer input must be a non-empty string");
+    throw new MinecraftToolkitError("resolvePlayer input must be a non-empty string", {
+      statusCode: 400,
+    });
   }
 
   const raw = input.trim();

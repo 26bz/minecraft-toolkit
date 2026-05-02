@@ -8,7 +8,7 @@ import {
 } from "node:crypto";
 import { DEFAULT_TIMEOUT_MS, DEFAULT_VOTIFIER_PORT } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
-import { normalizeAddress, normalizeUsername } from "../../utils/validation.js";
+import { normalizeAddress, normalizeUsername, validatePort } from "../../utils/validation.js";
 import { resolveTimeout, makeError } from "../shared.js";
 
 const HANDSHAKE_PREFIX = "VOTIFIER";
@@ -55,7 +55,7 @@ export async function sendVotifierVote(options = {}) {
     throw new MinecraftToolkitError("Voter IP address cannot be empty", { statusCode: 400 });
   }
 
-  const resolvedPort = Number.isInteger(port) ? port : DEFAULT_VOTIFIER_PORT;
+  const resolvedPort = Number.isInteger(port) ? validatePort(port) : DEFAULT_VOTIFIER_PORT;
   const resolvedTimeout = resolveTimeout(timeoutMs);
   const normalizedProtocol = normalizeProtocol(protocol);
   const hasPublicKey = typeof publicKey === "string" && publicKey.trim().length > 0;

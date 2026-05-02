@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
+  MinecraftToolkitError,
   fetchPlayerProfile,
   fetchPlayerSkin,
   fetchPlayerUUID,
@@ -22,6 +23,7 @@ import {
   convertPrefix,
   getMaps,
 } from "../index.js";
+import { ResponseCache, withCache } from "../src/utils/cache/index.js";
 import {
   uuidWithDashes,
   uuidWithoutDashes,
@@ -116,14 +118,10 @@ describe("player helper API", () => {
     expect(resolved.name).toBe("26bz");
   });
 
-  it("fetches name history", async () => {
-    mockFetchSequence([
-      { json: [{ name: "26bz" }, { name: "26bzNew", changedToAt: 1_700_000_000_000 }] },
-    ]);
-
-    const history = await fetchNameHistory("26bzuuid");
-    expect(history).toHaveLength(2);
-    expect(history[1]).toMatchObject({ name: "26bzNew" });
+  it("fetchNameHistory throws 410 (Mojang API removed)", async () => {
+    const err = await fetchNameHistory("26bzuuid").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(410);
   });
 
   it("fetches skin metadata with dominant color", async () => {
@@ -286,6 +284,18 @@ describe("formatting helpers", () => {
     expect(hasCodes("Plain text")).toBe(false);
   });
 
+  it("hasCodes handles edge cases", () => {
+    expect(hasCodes("")).toBe(false);
+    expect(hasCodes(null)).toBe(false);
+    expect(hasCodes(undefined)).toBe(false);
+    expect(hasCodes("§")).toBe(false);
+    expect(hasCodes("&")).toBe(false);
+    expect(hasCodes("§r")).toBe(true);
+    expect(hasCodes("&R")).toBe(true);
+    expect(hasCodes("§z")).toBe(false);
+    expect(hasCodes("text§amore")).toBe(true);
+  });
+
   it("converts prefixes and exposes maps", () => {
     const converted = convertPrefix("§aHi", "toAmpersand");
     expect(converted).toBe("&aHi");
@@ -294,5 +304,172 @@ describe("formatting helpers", () => {
     const maps = getMaps();
     expect(maps.colors.a.hex).toBe("#55ff55");
     expect(maps.formats.l.classSuffix).toBe("bold");
+  });
+});
+
+describe("resolvePlayer error contract", () => {
+  it("throws MinecraftToolkitError for empty string", async () => {
+    await expect(resolvePlayer("")).rejects.toBeInstanceOf(MinecraftToolkitError);
+  });
+
+  it("throws MinecraftToolkitError for non-string input", async () => {
+    await expect(resolvePlayer(null)).rejects.toBeInstanceOf(MinecraftToolkitError);
+    await expect(resolvePlayer(42)).rejects.toBeInstanceOf(MinecraftToolkitError);
+  });
+
+  it("throws with statusCode 400", async () => {
+    const err = await resolvePlayer("  ").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(400);
+  });
+});
+
+describe("ResponseCache", () => {
+  it("stores and retrieves values within TTL", () => {
+    const cache = new ResponseCache(5000);
+    cache.set("key", "value");
+    expect(cache.get("key")).toBe("value");
+  });
+
+  it("returns undefined for expired entries", async () => {
+    const cache = new ResponseCache(1);
+    cache.set("key", "value");
+    await new Promise((r) => setTimeout(r, 10));
+    expect(cache.get("key")).toBeUndefined();
+  });
+
+  it("enforces maxSize with FIFO eviction", () => {
+    const cache = new ResponseCache(30000, 3);
+    cache.set("a", 1);
+    cache.set("b", 2);
+    cache.set("c", 3);
+    expect(cache.size).toBe(3);
+
+    cache.set("d", 4);
+    expect(cache.size).toBe(3);
+    expect(cache.get("a")).toBeUndefined();
+    expect(cache.get("d")).toBe(4);
+  });
+
+  it("updating an existing key does not evict other entries", () => {
+    const cache = new ResponseCache(30000, 3);
+    cache.set("a", 1);
+    cache.set("b", 2);
+    cache.set("c", 3);
+    cache.set("b", 99);
+    expect(cache.size).toBe(3);
+    expect(cache.get("a")).toBe(1);
+    expect(cache.get("b")).toBe(99);
+  });
+
+  it("withCache skips resolver on hit", async () => {
+    const cache = new ResponseCache(5000);
+    const resolver = vi.fn(async () => "fresh");
+    cache.set("k", "cached");
+    const result = await withCache(cache, "k", resolver);
+    expect(result).toBe("cached");
+    expect(resolver).not.toHaveBeenCalled();
+  });
+
+  it("withCache calls resolver on miss and stores result", async () => {
+    const cache = new ResponseCache(5000);
+    const resolver = vi.fn(async () => "fresh");
+    const result = await withCache(cache, "k", resolver);
+    expect(result).toBe("fresh");
+    expect(resolver).toHaveBeenCalledOnce();
+    expect(cache.get("k")).toBe("fresh");
+  });
+});
+
+describe("fetchNameHistory deprecation", () => {
+  it("always throws with statusCode 410", async () => {
+    const err = await fetchNameHistory("any-uuid").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(410);
+    expect(err.message).toMatch(/removed/i);
+  });
+});
+
+describe("MinecraftToolkitError export", () => {
+  it("is exported from the main index", () => {
+    expect(MinecraftToolkitError).toBeDefined();
+    const err = new MinecraftToolkitError("test", { statusCode: 400 });
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe("MinecraftToolkitError");
+    expect(err.statusCode).toBe(400);
+  });
+
+  it("attaches retryAfter when provided", () => {
+    const err = new MinecraftToolkitError("rate limited", { statusCode: 429, retryAfter: 60 });
+    expect(err.retryAfter).toBe(60);
+  });
+
+  it("omits retryAfter when not provided", () => {
+    const err = new MinecraftToolkitError("error");
+    expect("retryAfter" in err).toBe(false);
+  });
+});
+
+describe("rate limit handling", () => {
+  afterEach(() => {
+    if (vi.isMockFunction(globalThis.fetch)) {
+      globalThis.fetch.mockClear();
+      delete globalThis.fetch;
+    }
+  });
+
+  it("fetchJson surfaces 429 with retryAfter from header", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      new Response(null, {
+        status: 429,
+        headers: { "retry-after": "120" },
+      }),
+    );
+
+    const err = await fetchPlayerProfile("26bz").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(429);
+    expect(err.retryAfter).toBe(120);
+  });
+
+  it("fetchJson surfaces 429 with null retryAfter when header absent", async () => {
+    globalThis.fetch = vi.fn(async () => new Response(null, { status: 429 }));
+
+    const err = await fetchPlayerProfile("26bz").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(429);
+    expect(err.retryAfter).toBeNull();
+  });
+
+  it("fetchPlayers propagates 429 instead of capturing it per-entry", async () => {
+    const rateLimitEncodedTextures = Buffer.from(
+      JSON.stringify({ textures: { SKIN: { url: "https://textures.minecraft.net/skin/a" } } }),
+    ).toString("base64");
+
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "aaa", name: "first" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: "aaa",
+            name: "first",
+            properties: [{ name: "textures", value: rateLimitEncodedTextures }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockResolvedValue(new Response(null, { status: 429, headers: { "retry-after": "60" } }));
+
+    const err = await fetchPlayers(["first", "second", "third"], { delayMs: 0 }).catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(429);
+    expect(err.retryAfter).toBe(60);
   });
 });

@@ -81,6 +81,11 @@ export function createPlayerHandlers() {
         statusCode: 400,
       });
     }
+    if (usernames.length > 100) {
+      throw new MinecraftToolkitError("Batch usernames array must not exceed 100 entries", {
+        statusCode: 400,
+      });
+    }
     const delayMs = typeof body.delayMs === "number" ? body.delayMs : undefined;
     return fetchPlayers(usernames, { delayMs });
   });
@@ -239,6 +244,8 @@ export const playerPlugin = definePlugin((app) => {
   return handlers;
 });
 
+const MAX_TOKEN_LENGTH = 4096;
+
 function requireAccessToken(event) {
   const header = getRequestHeader(event, "authorization") ?? "";
   if (!header.toLowerCase().startsWith("bearer ")) {
@@ -249,6 +256,11 @@ function requireAccessToken(event) {
   const token = header.slice(7).trim();
   if (!token) {
     throw new MinecraftToolkitError("Access token is required", { statusCode: 401 });
+  }
+  if (token.length > MAX_TOKEN_LENGTH) {
+    throw new MinecraftToolkitError("Access token exceeds maximum allowed length", {
+      statusCode: 401,
+    });
   }
   return token;
 }

@@ -1,3 +1,4 @@
+export { MinecraftToolkitError } from "./src/errors.js";
 export {
   fetchPlayerProfile,
   fetchPlayerSkin,

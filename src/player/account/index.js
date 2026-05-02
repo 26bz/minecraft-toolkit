@@ -52,7 +52,7 @@ export async function validateGiftCode(code, accessToken) {
     return false;
   }
 
-  throw new MinecraftToolkitError(`Failed to validate gift code ${code}`, {
+  throw new MinecraftToolkitError("Failed to validate gift code", {
     statusCode: response.status,
   });
 }

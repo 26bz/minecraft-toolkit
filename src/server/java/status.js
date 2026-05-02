@@ -1,13 +1,42 @@
 import { Socket } from "node:net";
+import { resolveSrv } from "node:dns/promises";
 import { DEFAULT_JAVA_PORT, DEFAULT_PROTOCOL_VERSION } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 import { normalizeAddress } from "../../utils/validation.js";
 import { resolveAddress } from "../../utils/network.js";
 import { resolveTimeout, makeError } from "../shared.js";
 
+const MAX_RECEIVE_BYTES = 1_048_576;
+const SRV_TIMEOUT_MS = 2_000;
+
+async function resolveSrvAddress(host, fallbackPort) {
+  try {
+    const records = await Promise.race([
+      resolveSrv(`_minecraft._tcp.${host}`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("SRV timeout")), SRV_TIMEOUT_MS)),
+    ]);
+    if (records.length > 0) {
+      records.sort((a, b) => a.priority - b.priority || b.weight - a.weight);
+      return { host: records[0].name, port: records[0].port };
+    }
+  } catch {
+    // SRV not found, NXDOMAIN, or timed out — fall through to direct connection
+  }
+  return { host, port: fallbackPort };
+}
+
 export async function fetchJavaServerStatus(address, options = {}) {
   const normalized = normalizeAddress(address);
-  const { host, port } = resolveAddress(normalized, options.port, DEFAULT_JAVA_PORT);
+
+  // Skip SRV when the caller explicitly provided a port (via options or embedded in address string)
+  const colonCount = (normalized.match(/:/g) ?? []).length;
+  const portExplicit = options.port !== undefined || colonCount === 1;
+
+  const { host: baseHost, port: basePort } = resolveAddress(normalized, options.port, DEFAULT_JAVA_PORT);
+  const { host, port } = portExplicit
+    ? { host: baseHost, port: basePort }
+    : await resolveSrvAddress(baseHost, basePort);
+
   const timeoutMs = resolveTimeout(options.timeoutMs);
   const protocolVersion = Number.isInteger(options.protocolVersion)
     ? options.protocolVersion
@@ -84,6 +113,14 @@ export async function fetchJavaServerStatus(address, options = {}) {
 
     socket.on("data", (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
+      if (buffer.length > MAX_RECEIVE_BYTES) {
+        rejectOnce(
+          new MinecraftToolkitError(`Response from ${host}:${port} exceeded maximum allowed size`, {
+            statusCode: 502,
+          }),
+        );
+        return;
+      }
       processPackets();
     });
 

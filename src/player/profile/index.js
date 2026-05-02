@@ -1,4 +1,4 @@
-import { MOJANG_PROFILE_BASE, SESSION_PROFILE_BASE, NAME_HISTORY_BASE } from "../../constants.js";
+import { MOJANG_PROFILE_BASE, SESSION_PROFILE_BASE } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 import { fetchJson } from "../../utils/http/index.js";
 import { normalizeUsername } from "../../utils/validation.js";
@@ -83,16 +83,11 @@ export async function fetchUsernameByUUID(uuid) {
   };
 }
 
-export async function fetchNameHistory(uuid) {
-  const entries = await fetchJson(`${NAME_HISTORY_BASE}/${uuid}/names`, {
-    notFoundMessage: "UUID not found",
-  });
-  return Array.isArray(entries)
-    ? entries.map((entry) => ({
-        name: entry.name,
-        changedAt: entry.changedToAt ? new Date(entry.changedToAt) : null,
-      }))
-    : [];
+export async function fetchNameHistory(_uuid) {
+  throw new MinecraftToolkitError(
+    "fetchNameHistory is no longer available. Mojang permanently removed the name history API in September 2022.",
+    { statusCode: 410 },
+  );
 }
 
 export async function fetchPlayers(usernames, options = {}) {
@@ -114,6 +109,9 @@ export async function fetchPlayers(usernames, options = {}) {
       const profile = await fetchPlayerProfile(username);
       results.push({ username, profile });
     } catch (error) {
+      if (error instanceof MinecraftToolkitError && error.statusCode === 429) {
+        throw error;
+      }
       results.push({ username, error });
     }
 

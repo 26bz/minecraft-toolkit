@@ -1,6 +1,16 @@
 import type { H3 } from "h3";
 import type { Buffer } from "node:buffer";
 
+export declare class MinecraftToolkitError extends Error {
+  readonly name: "MinecraftToolkitError";
+  statusCode: number;
+  retryAfter?: number | null;
+  constructor(
+    message: string,
+    options?: { statusCode?: number; cause?: unknown; retryAfter?: number | null },
+  );
+}
+
 export interface SkinTexture {
   url: string;
   metadata?: {
@@ -59,7 +69,8 @@ export function fetchPlayerProfile(username: string): Promise<PlayerProfile>;
 export function fetchPlayerSkin(username: string): Promise<PlayerSkin>;
 export function fetchPlayerUUID(username: string): Promise<{ id: string; name: string }>;
 export function fetchUsernameByUUID(uuid: string): Promise<{ id: string; name: string }>;
-export function fetchNameHistory(uuid: string): Promise<{ name: string; changedAt: Date | null }[]>;
+/** @deprecated Mojang permanently removed the name history API in September 2022. Always throws. */
+export function fetchNameHistory(uuid: string): Promise<never>;
 export function fetchPlayers(usernames: string[], options?: BatchOptions): Promise<BatchResult[]>;
 export function fetchPlayerSummary(username: string): Promise<PlayerSummary>;
 export function playerExists(username: string): Promise<boolean>;
@@ -255,7 +266,17 @@ export function createPlayerApp(options?: { app?: ConstructorParameters<typeof H
 };
 export const playerPlugin: (app: H3) => PlayerHandlers;
 
-export function fetchNameChangeInfo(accessToken: string): Promise<any>;
-export function checkNameAvailability(name: string, accessToken: string): Promise<any>;
+export interface NameChangeInfo {
+  changedAt: string | null;
+  nameChangeAllowed: boolean;
+  created: string | null;
+}
+
+export interface NameAvailability {
+  status: "AVAILABLE" | "DUPLICATE" | "NOT_ALLOWED";
+}
+
+export function fetchNameChangeInfo(accessToken: string): Promise<NameChangeInfo>;
+export function checkNameAvailability(name: string, accessToken: string): Promise<NameAvailability>;
 export function validateGiftCode(code: string, accessToken: string): Promise<boolean>;
 export function fetchBlockedServers(): Promise<string[]>;

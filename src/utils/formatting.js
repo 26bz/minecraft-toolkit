@@ -44,6 +44,7 @@ const FORMAT_CODES = freezeNested({
 
 const VALID_CODE_CHARS = new Set([...Object.keys(COLOR_CODES), ...Object.keys(FORMAT_CODES), "r"]);
 const COLOR_KEYS = new Set(Object.keys(COLOR_CODES));
+const HAS_CODES_RE = /(?:§|&)[0-9a-fghijklmnopqrstuvr]/i;
 
 export function toHTML(input, options) {
   const value = coerceInput(input);
@@ -63,17 +64,7 @@ export function stripCodes(input) {
 }
 
 export function hasCodes(input) {
-  const value = coerceInput(input);
-  for (let i = 0; i < value.length - 1; i += 1) {
-    const candidate = value[i];
-    if (
-      (candidate === "§" || candidate === "&") &&
-      VALID_CODE_CHARS.has(value[i + 1]?.toLowerCase())
-    ) {
-      return true;
-    }
-  }
-  return false;
+  return HAS_CODES_RE.test(coerceInput(input));
 }
 
 export function generateCSS(options) {
