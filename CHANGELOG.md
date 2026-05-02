@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v1.1.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.0.1...v1.1.0)
+
+### 🚀 Enhancements
+
+- Enhance error handling and deprecate name history API ([18e7d4c](https://github.com/26bz/minecraft-toolkit/commit/18e7d4c))
+
+### 🏡 Chore
+
+- **release:** V1.0.1 ([a2269e2](https://github.com/26bz/minecraft-toolkit/commit/a2269e2))
+- Bump deps ([b3484a3](https://github.com/26bz/minecraft-toolkit/commit/b3484a3))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v1.0.1
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.0.0...v1.0.1)
