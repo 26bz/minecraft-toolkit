@@ -114,10 +114,10 @@ describe("h3 integration", () => {
     expect(body.id).toBe(profileJson.id);
   });
 
-  it("name history route returns 410 (Mojang API removed)", async () => {
+  it("name history route is removed", async () => {
     const { app } = createPlayerApp();
     const response = await app.request(`/player/${profileJson.id}/names`);
-    expect(response.status).toBe(410);
+    expect(response.status).toBe(404);
   });
 
   it("serves exists route", async () => {

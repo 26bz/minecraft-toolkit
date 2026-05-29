@@ -2,6 +2,8 @@ import {
   H3,
   defineHandler,
   definePlugin,
+  onError,
+  setResponseStatus,
   readBody,
   getQuery,
   getRouterParam,
@@ -14,7 +16,6 @@ import {
   fetchPlayerSummary,
   fetchPlayerUUID,
   fetchPlayers,
-  fetchNameHistory,
   playerExists,
 } from "../player/profile/index.js";
 import { resolvePlayer } from "../player/resolve.js";
@@ -60,11 +61,6 @@ export function createPlayerHandlers() {
   const resolverHandler = defineHandler(async (event) => {
     const input = requireRouterParam(event, "input", "Username or UUID parameter is required");
     return resolvePlayer(input);
-  });
-
-  const nameHistoryHandler = defineHandler(async (event) => {
-    const uuid = requireRouterParam(event, "uuid", "UUID parameter is required");
-    return fetchNameHistory(uuid);
   });
 
   const existsHandler = defineHandler(async (event) => {
@@ -165,7 +161,6 @@ export function createPlayerHandlers() {
     summaryHandler,
     uuidHandler,
     resolverHandler,
-    nameHistoryHandler,
     existsHandler,
     batchHandler,
     nameChangeInfoHandler,
@@ -179,6 +174,15 @@ export function createPlayerHandlers() {
 
 export function createPlayerApp(options = {}) {
   const app = new H3(options?.app);
+
+  app.use(
+    onError((error, event) => {
+      const statusCode = error.status ?? 500;
+      setResponseStatus(event, statusCode);
+      return { error: error.cause?.message ?? error.message, statusCode };
+    }),
+  );
+
   const handlers = createPlayerHandlers();
 
   app.get("/player/:username", handlers.profileHandler, {
@@ -199,10 +203,6 @@ export function createPlayerApp(options = {}) {
 
   app.get("/player/:input/resolve", handlers.resolverHandler, {
     meta: { category: "player", resource: "resolve" },
-  });
-
-  app.get("/player/:uuid/names", handlers.nameHistoryHandler, {
-    meta: { category: "player", resource: "name-history" },
   });
 
   app.get("/player/:username/exists", handlers.existsHandler, {

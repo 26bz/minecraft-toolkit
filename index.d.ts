@@ -248,7 +248,6 @@ export interface PlayerHandlers {
   summaryHandler: import("h3").EventHandler;
   uuidHandler: import("h3").EventHandler;
   resolverHandler: import("h3").EventHandler;
-  nameHistoryHandler: import("h3").EventHandler;
   existsHandler: import("h3").EventHandler;
   batchHandler: import("h3").EventHandler;
   nameChangeInfoHandler: import("h3").EventHandler;

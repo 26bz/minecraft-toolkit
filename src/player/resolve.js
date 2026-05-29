@@ -1,6 +1,9 @@
+import { SESSION_PROFILE_BASE } from "../constants.js";
 import { MinecraftToolkitError } from "../errors.js";
+import { fetchJson } from "../utils/http/index.js";
 import { isUUID, normalizeUUID, uuidWithDashes } from "./identity/index.js";
-import { fetchPlayerProfile, fetchUsernameByUUID } from "./profile/index.js";
+import { fetchPlayerProfile } from "./profile/index.js";
+import { decodeTexturePayload } from "./textures.js";
 
 export async function resolvePlayer(input) {
   if (typeof input !== "string" || input.trim().length === 0) {
@@ -13,13 +16,15 @@ export async function resolvePlayer(input) {
 
   if (isUUID(raw)) {
     const normalized = normalizeUUID(raw);
-    const identity = await fetchUsernameByUUID(normalized);
-    const profile = await fetchPlayerProfile(identity.name);
+    const session = await fetchJson(`${SESSION_PROFILE_BASE}/${normalized}`, {
+      notFoundMessage: "UUID not found",
+    });
+    const texturePayload = decodeTexturePayload(session.properties);
     return {
       id: uuidWithDashes(normalized),
-      name: identity.name,
-      skin: profile.skin ?? null,
-      cape: profile.cape ?? null,
+      name: session.name,
+      skin: texturePayload?.textures?.SKIN ?? null,
+      cape: texturePayload?.textures?.CAPE ?? null,
     };
   }
 
