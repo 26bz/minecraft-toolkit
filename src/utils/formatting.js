@@ -60,7 +60,7 @@ export function toHTML(input, options) {
 
 export function stripCodes(input) {
   const value = coerceInput(input);
-  return value.replaceAll(/(?:§|&)[0-9a-fghijklmnpqrstuvr]/gi, "");
+  return value.replaceAll(/(?:§|&)[0-9a-fghijklmnopqrstuvr]/gi, "");
 }
 
 export function hasCodes(input) {

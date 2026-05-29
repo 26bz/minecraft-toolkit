@@ -86,7 +86,8 @@ export function createPlayerHandlers() {
         statusCode: 400,
       });
     }
-    const delayMs = typeof body.delayMs === "number" ? body.delayMs : undefined;
+    const delayMs =
+      typeof body.delayMs === "number" ? Math.min(Math.max(0, body.delayMs), 2000) : undefined;
     return fetchPlayers(usernames, { delayMs });
   });
 

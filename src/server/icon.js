@@ -4,7 +4,7 @@ import { MinecraftToolkitError } from "../errors.js";
 
 export async function fetchServerIcon(address, options = {}) {
   const status = await fetchJavaServerStatus(address, options);
-  const favicon = status?.favicon ?? status?.raw?.favicon;
+  const favicon = status?.favicon;
   if (!favicon || typeof favicon !== "string") {
     throw new MinecraftToolkitError("Server did not expose a favicon", { statusCode: 404 });
   }
