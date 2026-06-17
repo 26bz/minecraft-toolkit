@@ -8,7 +8,7 @@
 
 <!-- /automd -->
 
-Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, Java/Bedrock server status probes, and Votifier (v1/v2) clients that run in Node, Vite, and edge runtimes.
+Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, Java/Bedrock server status probes, and Votifier (v1/v2) clients for Node and other fetch-capable runtimes. Some helpers rely on Node networking or binary modules.
 
 > This toolkit wraps Mojang APIs. Rate limits and availability still apply. Write endpoints (name change, skin upload) are not yet included.
 
@@ -62,7 +62,7 @@ const resolved = await resolvePlayer("069a79f444e94726a5befca90e38aaf5");
 const skinMeta = await fetchSkinMetadata("26bz");
 ```
 
-Helpers are HTTP-agnostic and run anywhere `fetch` exists (Node 18+, Bun, Workers). All errors surface as `MinecraftToolkitError`.
+Fetch-based helpers run anywhere `fetch` exists (Node 18+, Bun, Workers). Node networking and PNG helpers are not edge-safe. All API-style failures surface as `MinecraftToolkitError`.
 
 ## Texture & Identity Utilities
 

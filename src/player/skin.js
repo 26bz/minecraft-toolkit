@@ -1,5 +1,6 @@
 import { PNG } from "pngjs";
 import { MinecraftToolkitError } from "../errors.js";
+import { fetchRequest } from "../utils/http/index.js";
 import { fetchPlayerProfile } from "./profile/index.js";
 
 const HEAD_REGION = { x: 8, y: 8, width: 8, height: 8 };
@@ -58,7 +59,7 @@ export async function computeSkinDominantColor(url, region = HEAD_REGION) {
 }
 
 async function fetchPng(url) {
-  const response = await fetch(url);
+  const response = await fetchRequest(url);
   if (!response.ok) {
     throw new MinecraftToolkitError("Unable to load skin texture", {
       statusCode: response.status,

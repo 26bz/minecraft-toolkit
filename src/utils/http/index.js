@@ -1,13 +1,25 @@
 import { DEFAULT_HEADERS } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 
+export async function fetchRequest(url, options = {}) {
+  try {
+    return await fetch(url, {
+      ...options,
+      headers: {
+        ...DEFAULT_HEADERS,
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    throw new MinecraftToolkitError(`Failed to fetch ${safeUrl(url)}`, {
+      statusCode: 502,
+      cause: error,
+    });
+  }
+}
+
 export async function fetchJson(url, { notFoundMessage, headers } = {}) {
-  const response = await fetch(url, {
-    headers: {
-      ...DEFAULT_HEADERS,
-      ...headers,
-    },
-  });
+  const response = await fetchRequest(url, { headers });
 
   if (response.status === 404 && notFoundMessage) {
     throw new MinecraftToolkitError(notFoundMessage, { statusCode: 404 });

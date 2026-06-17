@@ -2,6 +2,7 @@ import { MOJANG_PROFILE_BASE, SESSION_PROFILE_BASE } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 import { fetchJson } from "../../utils/http/index.js";
 import { normalizeUsername } from "../../utils/validation.js";
+import { normalizeUUID } from "../identity/index.js";
 import { decodeTexturePayload, getSkinURL, getCapeURL, extractTextureHash } from "../textures.js";
 
 export async function fetchPlayerProfile(username) {
@@ -74,7 +75,8 @@ export async function fetchPlayerUUID(username) {
 }
 
 export async function fetchUsernameByUUID(uuid) {
-  const response = await fetchJson(`${SESSION_PROFILE_BASE}/${uuid}`, {
+  const normalizedUUID = normalizeUUID(uuid);
+  const response = await fetchJson(`${SESSION_PROFILE_BASE}/${normalizedUUID}`, {
     notFoundMessage: "UUID not found",
   });
   return {

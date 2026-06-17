@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { createServer } from "node:net";
+import { createSocket } from "node:dgram";
 import {
   MinecraftToolkitError,
   fetchPlayerProfile,
@@ -23,7 +25,9 @@ import {
   convertPrefix,
   getMaps,
 } from "../index.js";
+import { fetchJavaServerStatus, fetchBedrockServerStatus, fetchServerStatus } from "../index.js";
 import { ResponseCache, withCache } from "../src/utils/cache/index.js";
+import { createCache } from "../src/utils/cache/index.js";
 import {
   uuidWithDashes,
   uuidWithoutDashes,
@@ -37,7 +41,10 @@ import {
   getSkinModel,
   extractTextureHash,
 } from "../src/player/textures.js";
+import { resolveTimeout, makeError } from "../src/server/shared.js";
+import { normalizeAddress, normalizeUsername, validatePort } from "../src/utils/validation.js";
 import { PNG } from "pngjs";
+import { RAKNET_MAGIC } from "../src/constants.js";
 
 function mockFetchSequence(responses) {
   let callIndex = 0;
@@ -61,6 +68,82 @@ function restoreFetch() {
     globalThis.fetch.mockClear();
     delete globalThis.fetch;
   }
+}
+
+function encodeVarInt(value) {
+  const bytes = [];
+  let current = value >>> 0;
+  do {
+    let byte = current & 0x7f;
+    current >>>= 7;
+    if (current !== 0) {
+      byte |= 0x80;
+    }
+    bytes.push(byte);
+  } while (current !== 0);
+  return Buffer.from(bytes);
+}
+
+function writeString(value) {
+  const data = Buffer.from(value, "utf8");
+  return Buffer.concat([encodeVarInt(data.length), data]);
+}
+
+function createJavaPacket(packetId, payload) {
+  const packet = Buffer.concat([encodeVarInt(packetId), payload]);
+  return Buffer.concat([encodeVarInt(packet.length), packet]);
+}
+
+function buildJavaStatusResponse() {
+  const response = JSON.stringify({
+    version: { name: "1.20.4", protocol: 765 },
+    players: { max: 20, online: 1 },
+    description: { text: "Toolkit Test Server" },
+    favicon: "data:image/png;base64,YWJj",
+  });
+  return createJavaPacket(0, writeString(response));
+}
+
+function buildJavaPongPacket() {
+  return createJavaPacket(1, Buffer.alloc(8));
+}
+
+function buildBedrockStatusMessage(port) {
+  const payload = [
+    "MCPE",
+    "Toolkit Bedrock Server",
+    "589",
+    "1.20.4",
+    "1",
+    "10",
+    "1234567890",
+    "world",
+    "Survival",
+    String(port),
+    String(port),
+  ].join(";");
+
+  const data = Buffer.from(payload, "utf8");
+  const message = Buffer.alloc(35 + data.length);
+  message.writeUInt8(0x1c, 0);
+  RAKNET_MAGIC.copy(message, 17);
+  message.writeUInt16BE(data.length, 33);
+  data.copy(message, 35);
+  return message;
+}
+
+async function listenTcp(server) {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, () => resolve(server.address()));
+  });
+}
+
+async function listenUdp(socket) {
+  return new Promise((resolve, reject) => {
+    socket.once("error", reject);
+    socket.bind(0, () => resolve(socket.address()));
+  });
 }
 
 const encodedTextures = Buffer.from(
@@ -171,6 +254,18 @@ describe("player helper API", () => {
     expect(await playerExists("ghost")).toBe(false);
   });
 
+  it("aborts batch player fetches", async () => {
+    const controller = new AbortController();
+    mockFetchSequence([{ json: profileJson }, { json: sessionJson }]);
+
+    const batch = fetchPlayers(["26bz", "ghost"], { delayMs: 50, signal: controller.signal });
+    controller.abort();
+
+    const err = await batch.catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(499);
+  });
+
   it("detects skin changes", () => {
     const profile = { skin: { url: "https://textures.minecraft.net/texture/abc" } };
     const changed = { skin: { url: "https://textures.minecraft.net/texture/def" } };
@@ -231,6 +326,16 @@ describe("account helpers", () => {
     const blocked = await fetchBlockedServers();
     expect(blocked).toEqual(["hash1", "hash2"]);
   });
+
+  it("wraps fetch failures in MinecraftToolkitError", async () => {
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error("network down");
+    });
+
+    const err = await fetchBlockedServers().catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(502);
+  });
 });
 
 describe("uuid helpers", () => {
@@ -242,6 +347,19 @@ describe("uuid helpers", () => {
     expect(isUUID(dashed)).toBe(true);
     expect(normalizeUUID(dashed)).toBe(compact.toLowerCase());
     expect(isValidUsername("26bz")).toBe(true);
+  });
+
+  it("rejects invalid UUID input", () => {
+    expect(isUUID(123)).toBe(false);
+    expect(isUUID("not-a-uuid")).toBe(false);
+    expect(() => normalizeUUID("not-a-uuid")).toThrow(MinecraftToolkitError);
+  });
+
+  it("normalizes dashed UUIDs in reverse lookup", async () => {
+    mockFetchSequence([{ json: sessionJson }]);
+
+    const result = await fetchUsernameByUUID("069a79f4-44e9-4726-a5be-fca90e38aaf5");
+    expect(result.id).toBe(profileJson.id);
   });
 });
 
@@ -265,6 +383,18 @@ describe("formatting helpers", () => {
     expect(rendered).toContain("font-weight: 700");
     expect(rendered.endsWith("!</span>!")).toBe(false);
     expect(rendered.endsWith("!"));
+  });
+
+  it("escapes html and rejects invalid prefix direction", () => {
+    expect(toHTML("<script>", { escapeHtml: true })).toContain("&lt;script&gt;");
+    expect(toHTML("<script>", { escapeHtml: false })).toContain("<script>");
+    expect(() => convertPrefix("&a", "invalid")).toThrow(MinecraftToolkitError);
+  });
+
+  it("handles empty input", () => {
+    expect(toHTML("", { mode: "inline" })).toBe("");
+    expect(stripCodes("")).toBe("");
+    expect(hasCodes("")).toBe(false);
   });
 
   it("renders class-based HTML and generates CSS", () => {
@@ -321,6 +451,137 @@ describe("resolvePlayer error contract", () => {
     const err = await resolvePlayer("  ").catch((e) => e);
     expect(err).toBeInstanceOf(MinecraftToolkitError);
     expect(err.statusCode).toBe(400);
+  });
+
+  it("resolves usernames through the player profile path", async () => {
+    mockFetchSequence([{ json: profileJson }, { json: sessionJson }]);
+
+    const resolved = await resolvePlayer("26bz");
+    expect(resolved.name).toBe("26bz");
+    expect(resolved.id).toContain("-");
+  });
+});
+
+describe("network parsing", () => {
+  it("parses bracketed IPv6 host with port", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("[::1]:25565", undefined, 25565)).toEqual({
+      host: "[::1]",
+      port: 25565,
+    });
+  });
+});
+
+describe("server status transports", () => {
+  it("parses Java status from a local server", async () => {
+    const server = createServer((socket) => {
+      let seenRequest = false;
+      socket.on("data", (chunk) => {
+        if (!seenRequest) {
+          seenRequest = true;
+          socket.write(buildJavaStatusResponse());
+          return;
+        }
+
+        if (chunk.length > 0) {
+          socket.write(buildJavaPongPacket());
+          socket.end();
+        }
+      });
+    });
+
+    const address = await listenTcp(server);
+    const status = await fetchJavaServerStatus("127.0.0.1", { port: address.port, timeoutMs: 2000 });
+    server.close();
+
+    expect(status.edition).toBe("java");
+    expect(status.online).toBe(true);
+    expect(status.motd).toBe("Toolkit Test Server");
+    expect(status.version?.name).toBe("1.20.4");
+    expect(status.players?.online).toBe(1);
+  });
+
+  it("parses Bedrock status from a local server", async () => {
+    const socket = createSocket("udp4");
+    socket.on("message", (_message, rinfo) => {
+      socket.send(buildBedrockStatusMessage(rinfo.port), rinfo.port, rinfo.address);
+    });
+
+    const address = await listenUdp(socket);
+    const status = await fetchBedrockServerStatus("127.0.0.1", {
+      port: address.port,
+      timeoutMs: 2000,
+    });
+    socket.close();
+
+    expect(status.edition).toBe("bedrock");
+    expect(status.online).toBe(true);
+    expect(status.motd).toBe("Toolkit Bedrock Server");
+    expect(status.version.name).toBe("1.20.4");
+    expect(status.players.online).toBe(1);
+  });
+
+  it("dispatches server status by edition", async () => {
+    const server = createServer((socket) => {
+      let seenRequest = false;
+      socket.on("data", (chunk) => {
+        if (!seenRequest) {
+          seenRequest = true;
+          socket.write(buildJavaStatusResponse());
+          return;
+        }
+        if (chunk.length > 0) {
+          socket.write(buildJavaPongPacket());
+          socket.end();
+        }
+      });
+    });
+
+    const address = await listenTcp(server);
+    const status = await fetchServerStatus("127.0.0.1", { edition: "auto", port: address.port });
+    server.close();
+
+    expect(status.edition).toBe("java");
+  });
+
+  it("rejects invalid server edition", async () => {
+    const err = await fetchServerStatus("127.0.0.1", { edition: "bogus" }).catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(400);
+  });
+});
+
+describe("cache and timeout helpers", () => {
+  it("creates caches from options and respects null cache", async () => {
+    expect(createCache({ cache: false })).toBeNull();
+    expect(createCache({ ttlSeconds: 1 })).toBeTruthy();
+    expect(createCache({ cache: { ttlSeconds: 1, maxSize: 2 } })).toBeTruthy();
+
+    const resolver = vi.fn(async () => "value");
+    const result = await withCache(null, "key", resolver);
+    expect(result).toBe("value");
+    expect(resolver).toHaveBeenCalledOnce();
+  });
+
+  it("resolves timeout defaults and builds errors", () => {
+    expect(resolveTimeout(2500)).toBe(2500);
+    expect(resolveTimeout(-1)).toBeGreaterThan(0);
+    expect(resolveTimeout(Number.POSITIVE_INFINITY)).toBeGreaterThan(0);
+
+    const error = makeError("boom", new Error("cause"));
+    expect(error).toBeInstanceOf(MinecraftToolkitError);
+    expect(error.cause).toBeInstanceOf(Error);
+  });
+});
+
+describe("validation helpers", () => {
+  it("normalizes and validates addresses, usernames, and ports", () => {
+    expect(normalizeAddress(" example.org ")).toBe("example.org");
+    expect(normalizeUsername(" 26bz ")).toBe("26bz");
+    expect(validatePort("25565")).toBe(25565);
+    expect(() => validatePort(0)).toThrow(MinecraftToolkitError);
+    expect(() => normalizeAddress(123)).toThrow(MinecraftToolkitError);
+    expect(() => normalizeUsername(null)).toThrow(MinecraftToolkitError);
   });
 });
 

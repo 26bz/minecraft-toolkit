@@ -1,6 +1,6 @@
 import { DEFAULT_HEADERS } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
-import { fetchJson } from "../../utils/http/index.js";
+import { fetchJson, fetchRequest } from "../../utils/http/index.js";
 
 const API_BASE = "https://api.minecraftservices.com";
 
@@ -37,12 +37,12 @@ export async function validateGiftCode(code, accessToken) {
     throw new MinecraftToolkitError("Gift code is required", { statusCode: 400 });
   }
 
-  const response = await fetch(`${API_BASE}/productvoucher/giftcode/${encodeURIComponent(code)}`, {
-    headers: {
-      ...DEFAULT_HEADERS,
-      ...authHeaders(accessToken),
+  const response = await fetchRequest(
+    `${API_BASE}/productvoucher/giftcode/${encodeURIComponent(code)}`,
+    {
+      headers: authHeaders(accessToken),
     },
-  });
+  );
 
   if (response.status === 200 || response.status === 204) {
     return true;
@@ -58,9 +58,7 @@ export async function validateGiftCode(code, accessToken) {
 }
 
 export async function fetchBlockedServers() {
-  const response = await fetch(`https://sessionserver.mojang.com/blockedservers`, {
-    headers: DEFAULT_HEADERS,
-  });
+  const response = await fetchRequest(`https://sessionserver.mojang.com/blockedservers`);
 
   if (!response.ok) {
     throw new MinecraftToolkitError("Unable to fetch blocked servers", {

@@ -1,8 +1,13 @@
 import { validatePort } from "./validation.js";
 
 export function resolveAddress(address, overridePort, fallbackPort) {
-  if (overridePort) {
+  if (overridePort !== undefined && overridePort !== null) {
     return { host: address, port: validatePort(overridePort) };
+  }
+
+  const bracketed = address.match(/^(\[[^\]]+\]):(\d+)$/);
+  if (bracketed) {
+    return { host: bracketed[1], port: validatePort(bracketed[2]) };
   }
 
   // Only treat as "host:port" when there is exactly one colon.
