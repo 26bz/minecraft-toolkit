@@ -13,7 +13,9 @@ async function resolveSrvAddress(host, fallbackPort) {
   try {
     const records = await Promise.race([
       resolveSrv(`_minecraft._tcp.${host}`),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("SRV timeout")), SRV_TIMEOUT_MS)),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("SRV timeout")), SRV_TIMEOUT_MS),
+      ),
     ]);
     if (records.length > 0) {
       records.sort((a, b) => a.priority - b.priority || b.weight - a.weight);
@@ -32,7 +34,11 @@ export async function fetchJavaServerStatus(address, options = {}) {
   const colonCount = (normalized.match(/:/g) ?? []).length;
   const portExplicit = options.port !== undefined || colonCount === 1;
 
-  const { host: baseHost, port: basePort } = resolveAddress(normalized, options.port, DEFAULT_JAVA_PORT);
+  const { host: baseHost, port: basePort } = resolveAddress(
+    normalized,
+    options.port,
+    DEFAULT_JAVA_PORT,
+  );
   const { host, port } = portExplicit
     ? { host: baseHost, port: basePort }
     : await resolveSrvAddress(baseHost, basePort);

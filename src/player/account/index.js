@@ -1,4 +1,3 @@
-import { DEFAULT_HEADERS } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 import { fetchJson, fetchRequest } from "../../utils/http/index.js";
 

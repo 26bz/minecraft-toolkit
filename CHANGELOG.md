@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## v1.1.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.0.1...v1.1.0)
@@ -115,7 +114,6 @@
 
 ## v0.1.1
 
-
 ### 🏡 Chore
 
 - Initial commit ([7083390](https://github.com/26bz/minecraft-toolkit/commit/7083390))
@@ -123,4 +121,3 @@
 ### ❤️ Contributors
 
 - 26bz ([@26bz](https://github.com/26bz))
-

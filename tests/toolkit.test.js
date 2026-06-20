@@ -491,7 +491,10 @@ describe("server status transports", () => {
     });
 
     const address = await listenTcp(server);
-    const status = await fetchJavaServerStatus("127.0.0.1", { port: address.port, timeoutMs: 2000 });
+    const status = await fetchJavaServerStatus("127.0.0.1", {
+      port: address.port,
+      timeoutMs: 2000,
+    });
     server.close();
 
     expect(status.edition).toBe("java");
@@ -681,11 +684,12 @@ describe("rate limit handling", () => {
   });
 
   it("fetchJson surfaces 429 with retryAfter from header", async () => {
-    globalThis.fetch = vi.fn(async () =>
-      new Response(null, {
-        status: 429,
-        headers: { "retry-after": "120" },
-      }),
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 429,
+          headers: { "retry-after": "120" },
+        }),
     );
 
     const err = await fetchPlayerProfile("26bz").catch((e) => e);

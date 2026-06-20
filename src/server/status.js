@@ -5,15 +5,15 @@ import { MinecraftToolkitError } from "../errors.js";
 export { fetchJavaServerStatus } from "./java/status.js";
 export { fetchBedrockServerStatus } from "./bedrock/status.js";
 
-let _typeDeprecationWarned = false;
+let typeDeprecationWarned = false;
 
 export async function fetchServerStatus(address, options = {}) {
   const { edition, type, ...rest } = options;
 
-  if (type !== undefined && edition === undefined && !_typeDeprecationWarned) {
-    _typeDeprecationWarned = true;
+  if (type !== undefined && edition === undefined && !typeDeprecationWarned) {
+    typeDeprecationWarned = true;
     const msg =
-      '[minecraft-toolkit] fetchServerStatus({ type }) is deprecated. Use fetchServerStatus({ edition }) instead.';
+      "[minecraft-toolkit] fetchServerStatus({ type }) is deprecated. Use fetchServerStatus({ edition }) instead.";
     if (typeof process !== "undefined" && typeof process.emitWarning === "function") {
       process.emitWarning(msg, "DeprecationWarning");
     } else {
