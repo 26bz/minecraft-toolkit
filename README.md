@@ -46,7 +46,6 @@ import {
   fetchPlayerSkin,
   fetchPlayerUUID,
   fetchPlayerSummary,
-  fetchNameHistory,
   fetchPlayers,
   resolvePlayer,
   fetchSkinMetadata,
@@ -56,7 +55,6 @@ const profile = await fetchPlayerProfile("26bz");
 const summary = await fetchPlayerSummary("26bz");
 const skin = await fetchPlayerSkin("26bz");
 const uuid = await fetchPlayerUUID("26bz");
-const history = await fetchNameHistory("069a79f444e94726a5befca90e38aaf5");
 const batch = await fetchPlayers(["Notch", "26bz"], { delayMs: 50 });
 const resolved = await resolvePlayer("069a79f444e94726a5befca90e38aaf5");
 const skinMeta = await fetchSkinMetadata("26bz");
