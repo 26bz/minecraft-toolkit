@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.2.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.1.0...v1.2.0)
+
+### 🚀 Enhancements
+
+- Enhance error handling and deprecate name history API ([18e7d4c](https://github.com/26bz/minecraft-toolkit/commit/18e7d4c))
+- Expose response cache publicly, add withRetry, watchServerStatus, and skin rendering to head/bust PNGs ([020ec27](https://github.com/26bz/minecraft-toolkit/commit/020ec27))
+
+### 🩹 Fixes
+
+- Export playerPlugin, strip italic code, remove stale raw.favicon fallback, clamp batch delayMs ([d926d8e](https://github.com/26bz/minecraft-toolkit/commit/d926d8e))
+- Reduce resolvePlayer UUID path to 1 API call, add h3 error handler, remove name history route ([fa309dc](https://github.com/26bz/minecraft-toolkit/commit/fa309dc))
+- Tighten package stability and coverage ([88e5132](https://github.com/26bz/minecraft-toolkit/commit/88e5132))
+- Drop pinned h3 RC, bump vite to v8, patch esbuild, remove stale import, fix underscore lint ([4665726](https://github.com/26bz/minecraft-toolkit/commit/4665726))
+
+### 🏡 Chore
+
+- Bump deps ([b3484a3](https://github.com/26bz/minecraft-toolkit/commit/b3484a3))
+- **release:** V1.1.0 ([59d2aef](https://github.com/26bz/minecraft-toolkit/commit/59d2aef))
+- **release:** V1.1.1 ([15b22c5](https://github.com/26bz/minecraft-toolkit/commit/15b22c5))
+- Remove dead fetchNameHistory example, add funding field, bump dev deps ([4968e05](https://github.com/26bz/minecraft-toolkit/commit/4968e05))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v1.1.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.0.1...v1.1.0)
