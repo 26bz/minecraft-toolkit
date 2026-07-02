@@ -88,6 +88,23 @@ export function computeSkinDominantColor(
 ): Promise<string | null>;
 export function resolvePlayer(input: string): Promise<PlayerSkin>;
 
+export interface RenderedImage {
+  width: number;
+  height: number;
+  buffer: Buffer;
+  base64: string;
+  dataUri: string;
+}
+
+export interface RenderOptions {
+  size?: number;
+  overlay?: boolean;
+  model?: "default" | "slim";
+}
+
+export function renderPlayerHead(input: string, options?: RenderOptions): Promise<RenderedImage>;
+export function renderPlayerBust(input: string, options?: RenderOptions): Promise<RenderedImage>;
+
 export function isValidUsername(username: string): boolean;
 export function isUUID(value: string): boolean;
 export function normalizeUUID(uuid: string): string;
@@ -221,6 +238,20 @@ export function fetchServerIcon(
   options?: JavaServerStatusOptions,
 ): Promise<ServerIconResult>;
 
+export interface WatchServerStatusOptions extends ServerStatusOptions {
+  intervalMs?: number;
+  immediate?: boolean;
+  onUpdate?: (status: ServerStatus) => void;
+  onChange?: (status: ServerStatus, previous: ServerStatus | null) => void;
+  onError?: (error: unknown) => void;
+}
+
+export interface WatchHandle {
+  stop: () => void;
+}
+
+export function watchServerStatus(address: string, options?: WatchServerStatusOptions): WatchHandle;
+
 export interface VotifierVoteOptions {
   host: string;
   port?: number;
@@ -279,3 +310,44 @@ export function fetchNameChangeInfo(accessToken: string): Promise<NameChangeInfo
 export function checkNameAvailability(name: string, accessToken: string): Promise<NameAvailability>;
 export function validateGiftCode(code: string, accessToken: string): Promise<boolean>;
 export function fetchBlockedServers(): Promise<string[]>;
+
+export function fetchRequest(url: string, options?: RequestInit): Promise<Response>;
+export function fetchJson<T = unknown>(
+  url: string,
+  options?: { notFoundMessage?: string; headers?: HeadersInit },
+): Promise<T>;
+
+export interface RetryOptions {
+  retries?: number;
+  minDelayMs?: number;
+  maxDelayMs?: number;
+  onRetry?: (info: { attempt: number; delayMs: number; error: unknown }) => void;
+}
+
+export function withRetry<T>(
+  fn: (attempt: number) => Promise<T>,
+  options?: RetryOptions,
+): Promise<T>;
+
+export declare class ResponseCache<T = unknown> {
+  constructor(ttlMs?: number, maxSize?: number);
+  get(key: string): T | undefined;
+  set(key: string, value: T): void;
+  delete(key: string): void;
+  clear(): void;
+  readonly size: number;
+}
+
+export interface CreateCacheOptions {
+  cache?: false | { ttlSeconds?: number; maxSize?: number };
+  cacheTtl?: number;
+  ttlSeconds?: number;
+  maxSize?: number;
+}
+
+export function createCache<T = unknown>(options?: CreateCacheOptions): ResponseCache<T> | null;
+export function withCache<T>(
+  cache: ResponseCache<T> | null,
+  key: string,
+  resolver: () => Promise<T>,
+): Promise<T>;

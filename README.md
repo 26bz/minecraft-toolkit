@@ -105,6 +105,59 @@ const accent = await computeSkinDominantColor(meta.skin.url, {
 });
 ```
 
+## Skin Rendering
+
+Composite a skin texture into a ready-to-use PNG (`buffer`, `base64`, and `dataUri`), without pulling in a canvas dependency. Accepts a username, UUID, or a raw skin URL.
+
+```ts
+import { renderPlayerHead, renderPlayerBust } from "minecraft-toolkit";
+
+const head = await renderPlayerHead("26bz", { size: 128 }); // face + hat overlay
+const bust = await renderPlayerBust("26bz", { size: 128 }); // head + torso + arms
+
+console.log(head.dataUri); // "data:image/png;base64,..."
+```
+
+- `overlay` (default `true`) toggles the hat/jacket/sleeve overlay layers.
+- `model` forces `"default"` or `"slim"` arm width when rendering from a raw skin URL (model is auto-detected when resolving by username/UUID).
+- `renderPlayerBust` mirrors the right arm for legacy 64x32 skins that don't carry left-limb pixel data.
+
+## Caching & Retries
+
+The internal response cache and a rate-limit-aware retry helper are exposed for building your own resilient wrappers around any of the fetch-based helpers.
+
+```ts
+import { createCache, withCache, withRetry, fetchPlayerProfile } from "minecraft-toolkit";
+
+const cache = createCache({ ttlSeconds: 30 });
+
+const profile = await withRetry(() =>
+  withCache(cache, "profile:26bz", () => fetchPlayerProfile("26bz")),
+);
+```
+
+- `withRetry(fn, options)` retries only on `MinecraftToolkitError` with `statusCode: 429`, honoring the Mojang `Retry-After` header (`retryAfter`) when present and falling back to exponential backoff (`minDelayMs`/`maxDelayMs`, default 3 retries).
+- `createCache({ ttlSeconds, maxSize })` returns a `ResponseCache` (or `null` when `{ cache: false }`); `withCache(cache, key, resolver)` is a no-op passthrough when `cache` is `null`.
+
+## Server Status Watcher
+
+Poll a server on an interval and only get notified when something actually changes (online state, player count, or MOTD) — no need to hand-roll diffing for a status page or Discord bot.
+
+```ts
+import { watchServerStatus } from "minecraft-toolkit";
+
+const watcher = watchServerStatus("mc.hypixel.net", {
+  intervalMs: 30_000,
+  onChange: (status, previous) => console.log(`players: ${status.players.online}`),
+  onError: (error) => console.error(error),
+});
+
+// later
+watcher.stop();
+```
+
+`onUpdate` fires on every poll; `onChange` fires only when `online`, `players.online`, `players.max`, or `motd` differ from the previous poll. Accepts the same options as `fetchServerStatus`.
+
 ## Account Helpers
 
 A valid Microsoft/Xbox Live access token is required for `minecraftservices.com` endpoints. Missing or expired tokens throw `MinecraftToolkitError` with `statusCode: 401`.

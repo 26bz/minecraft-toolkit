@@ -1,6 +1,4 @@
-import { PNG } from "pngjs";
-import { MinecraftToolkitError } from "../errors.js";
-import { fetchRequest } from "../utils/http/index.js";
+import { decodePngFromUrl } from "../utils/png.js";
 import { fetchPlayerProfile } from "./profile/index.js";
 
 const HEAD_REGION = { x: 8, y: 8, width: 8, height: 8 };
@@ -25,7 +23,7 @@ export async function fetchSkinMetadata(username, options = {}) {
 }
 
 export async function computeSkinDominantColor(url, region = HEAD_REGION) {
-  const png = await fetchPng(url);
+  const png = await decodePngFromUrl(url);
   const { width, height, data } = png;
   const { x, y, width: regionWidth, height: regionHeight } = clampRegion(region, width, height);
 
@@ -56,25 +54,6 @@ export async function computeSkinDominantColor(url, region = HEAD_REGION) {
   const avgG = Math.round(g / samples);
   const avgB = Math.round(b / samples);
   return rgbToHex(avgR, avgG, avgB);
-}
-
-async function fetchPng(url) {
-  const response = await fetchRequest(url);
-  if (!response.ok) {
-    throw new MinecraftToolkitError("Unable to load skin texture", {
-      statusCode: response.status,
-    });
-  }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  try {
-    return PNG.sync.read(buffer);
-  } catch (error) {
-    throw new MinecraftToolkitError("Unable to decode PNG skin texture", {
-      statusCode: 500,
-      cause: error,
-    });
-  }
 }
 
 function clampRegion(region, width, height) {

@@ -58,3 +58,43 @@ function safeUrl(url) {
     return "[url]";
   }
 }
+
+const DEFAULT_RETRIES = 3;
+const DEFAULT_MIN_DELAY_MS = 500;
+const DEFAULT_MAX_DELAY_MS = 30_000;
+
+export async function withRetry(fn, options = {}) {
+  const {
+    retries = DEFAULT_RETRIES,
+    minDelayMs = DEFAULT_MIN_DELAY_MS,
+    maxDelayMs = DEFAULT_MAX_DELAY_MS,
+    onRetry,
+  } = options;
+
+  let attempt = 0;
+
+  for (;;) {
+    try {
+      return await fn(attempt);
+    } catch (error) {
+      const isRateLimited = error instanceof MinecraftToolkitError && error.statusCode === 429;
+      if (!isRateLimited || attempt >= retries) {
+        throw error;
+      }
+
+      const retryAfterMs =
+        typeof error.retryAfter === "number" && Number.isFinite(error.retryAfter)
+          ? error.retryAfter * 1000
+          : null;
+      const delayMs = retryAfterMs ?? Math.min(maxDelayMs, minDelayMs * 2 ** attempt);
+
+      attempt += 1;
+      onRetry?.({ attempt, delayMs, error });
+      await wait(delayMs);
+    }
+  }
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

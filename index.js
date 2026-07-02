@@ -11,6 +11,7 @@ export {
   hasSkinChanged,
 } from "./src/player/profile/index.js";
 export { fetchSkinMetadata, computeSkinDominantColor } from "./src/player/skin.js";
+export { renderPlayerHead, renderPlayerBust } from "./src/player/render.js";
 export {
   isValidUsername,
   isUUID,
@@ -32,6 +33,7 @@ export {
   fetchJavaServerStatus,
   fetchBedrockServerStatus,
 } from "./src/server/status.js";
+export { watchServerStatus } from "./src/server/watch.js";
 export {
   toHTML,
   stripCodes,
@@ -42,3 +44,5 @@ export {
 } from "./src/utils/formatting.js";
 export { sendVotifierVote } from "./src/server/votifier/index.js";
 export { fetchServerIcon } from "./src/server/icon.js";
+export { fetchJson, fetchRequest, withRetry } from "./src/utils/http/index.js";
+export { ResponseCache, createCache, withCache } from "./src/utils/cache/index.js";

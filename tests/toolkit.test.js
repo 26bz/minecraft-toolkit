@@ -25,9 +25,20 @@ import {
   convertPrefix,
   getMaps,
 } from "../index.js";
-import { fetchJavaServerStatus, fetchBedrockServerStatus, fetchServerStatus } from "../index.js";
-import { ResponseCache, withCache } from "../src/utils/cache/index.js";
-import { createCache } from "../src/utils/cache/index.js";
+import {
+  fetchJavaServerStatus,
+  fetchBedrockServerStatus,
+  fetchServerStatus,
+  watchServerStatus,
+  renderPlayerHead,
+  renderPlayerBust,
+  withRetry,
+  fetchJson,
+  fetchRequest,
+  ResponseCache,
+  createCache,
+  withCache,
+} from "../index.js";
 import {
   uuidWithDashes,
   uuidWithoutDashes,
@@ -144,6 +155,40 @@ async function listenUdp(socket) {
     socket.once("error", reject);
     socket.bind(0, () => resolve(socket.address()));
   });
+}
+
+async function waitFor(predicate, { timeoutMs = 2000, intervalMs = 10 } = {}) {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error("waitFor: timed out");
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
+function fillSkinRegion(png, x0, y0, w, h, [r, g, b, a]) {
+  for (let y = y0; y < y0 + h; y += 1) {
+    for (let x = x0; x < x0 + w; x += 1) {
+      const idx = (y * png.width + x) * 4;
+      png.data[idx] = r;
+      png.data[idx + 1] = g;
+      png.data[idx + 2] = b;
+      png.data[idx + 3] = a;
+    }
+  }
+}
+
+function buildTestSkinPng({ height = 64 } = {}) {
+  const png = new PNG({ width: 64, height });
+  fillSkinRegion(png, 8, 8, 8, 8, [255, 0, 0, 255]); // head base: red
+  fillSkinRegion(png, 40, 8, 8, 8, [0, 0, 255, 128]); // head overlay: translucent blue
+  fillSkinRegion(png, 20, 20, 8, 12, [0, 255, 0, 255]); // body base: green
+  fillSkinRegion(png, 44, 20, 4, 12, [255, 255, 0, 255]); // right arm base: yellow
+  if (height >= 64) {
+    fillSkinRegion(png, 36, 52, 4, 12, [0, 255, 255, 255]); // left arm base: cyan
+  }
+  return PNG.sync.write(png);
 }
 
 const encodedTextures = Buffer.from(
@@ -551,6 +596,252 @@ describe("server status transports", () => {
     const err = await fetchServerStatus("127.0.0.1", { edition: "bogus" }).catch((e) => e);
     expect(err).toBeInstanceOf(MinecraftToolkitError);
     expect(err.statusCode).toBe(400);
+  });
+});
+
+describe("watchServerStatus", () => {
+  it("polls status, fires onChange only on meaningful change, and stops cleanly", async () => {
+    let onlineCount = 1;
+    const server = createServer((socket) => {
+      let seenRequest = false;
+      socket.on("data", (chunk) => {
+        if (!seenRequest) {
+          seenRequest = true;
+          const response = JSON.stringify({
+            version: { name: "1.20.4", protocol: 765 },
+            players: { max: 20, online: onlineCount },
+            description: { text: "Toolkit Test Server" },
+          });
+          socket.write(createJavaPacket(0, writeString(response)));
+          return;
+        }
+        if (chunk.length > 0) {
+          socket.write(buildJavaPongPacket());
+          socket.end();
+        }
+      });
+    });
+
+    const address = await listenTcp(server);
+    const updates = [];
+    const changes = [];
+
+    const handle = watchServerStatus("127.0.0.1", {
+      port: address.port,
+      timeoutMs: 2000,
+      intervalMs: 20,
+      onUpdate: (status) => updates.push(status),
+      onChange: (status) => changes.push(status),
+    });
+
+    await waitFor(() => updates.length >= 2);
+    onlineCount = 5;
+    await waitFor(() => changes.length >= 2);
+
+    handle.stop();
+    const changeCountAtStop = changes.length;
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    server.close();
+
+    expect(changes.length).toBe(changeCountAtStop);
+    expect(changes[0].players.online).toBe(1);
+    expect(changes[1].players.online).toBe(5);
+  });
+
+  it("reports failures via onError instead of throwing", async () => {
+    const errors = [];
+    const handle = watchServerStatus("127.0.0.1", {
+      port: 1,
+      timeoutMs: 200,
+      intervalMs: 20,
+      onError: (error) => errors.push(error),
+    });
+
+    await waitFor(() => errors.length >= 1);
+    handle.stop();
+
+    expect(errors[0]).toBeInstanceOf(MinecraftToolkitError);
+  });
+});
+
+describe("withRetry", () => {
+  it("retries rate-limited calls and eventually succeeds", async () => {
+    let attempts = 0;
+    const result = await withRetry(
+      async () => {
+        attempts += 1;
+        if (attempts < 3) {
+          throw new MinecraftToolkitError("rate limited", { statusCode: 429, retryAfter: 0 });
+        }
+        return "ok";
+      },
+      { retries: 5, minDelayMs: 1 },
+    );
+
+    expect(result).toBe("ok");
+    expect(attempts).toBe(3);
+  });
+
+  it("gives up after exhausting the retry budget", async () => {
+    let attempts = 0;
+    const err = await withRetry(
+      async () => {
+        attempts += 1;
+        throw new MinecraftToolkitError("rate limited", { statusCode: 429, retryAfter: 0 });
+      },
+      { retries: 2, minDelayMs: 1 },
+    ).catch((e) => e);
+
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(429);
+    expect(attempts).toBe(3);
+  });
+
+  it("does not retry non-429 errors", async () => {
+    let attempts = 0;
+    const err = await withRetry(async () => {
+      attempts += 1;
+      throw new MinecraftToolkitError("not found", { statusCode: 404 });
+    }, {}).catch((e) => e);
+
+    expect(err.statusCode).toBe(404);
+    expect(attempts).toBe(1);
+  });
+
+  it("invokes onRetry with attempt and delay info", async () => {
+    const retryInfo = [];
+    let attempts = 0;
+    await withRetry(
+      async () => {
+        attempts += 1;
+        if (attempts < 2) {
+          throw new MinecraftToolkitError("rate limited", { statusCode: 429, retryAfter: 0 });
+        }
+        return "ok";
+      },
+      { retries: 3, minDelayMs: 1, onRetry: (info) => retryInfo.push(info) },
+    );
+
+    expect(retryInfo).toHaveLength(1);
+    expect(retryInfo[0].attempt).toBe(1);
+  });
+});
+
+describe("public HTTP utilities", () => {
+  afterEach(() => {
+    restoreFetch();
+  });
+
+  it("fetchRequest performs a request with default headers", async () => {
+    mockFetchSequence([{ json: { ok: true } }]);
+    const response = await fetchRequest("https://example.com/test");
+    expect(response.status).toBe(200);
+  });
+
+  it("fetchJson throws MinecraftToolkitError on 404", async () => {
+    mockFetchSequence([{ status: 404 }]);
+    const err = await fetchJson("https://example.com/missing", {
+      notFoundMessage: "missing",
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(404);
+  });
+});
+
+describe("skin rendering", () => {
+  afterEach(() => {
+    restoreFetch();
+  });
+
+  it("renders a player head with the hat overlay alpha-blended", async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(buildTestSkinPng(), { status: 200, headers: { "content-type": "image/png" } }),
+    );
+
+    const head = await renderPlayerHead("https://example.com/skin.png", { size: 8 });
+    expect(head.width).toBe(8);
+    expect(head.height).toBe(8);
+    expect(head.buffer).toBeInstanceOf(Buffer);
+    expect(head.dataUri).toMatch(/^data:image\/png;base64,/);
+
+    const decoded = PNG.sync.read(head.buffer);
+    expect([decoded.data[0], decoded.data[1], decoded.data[2], decoded.data[3]]).toEqual([
+      127, 0, 128, 255,
+    ]);
+  });
+
+  it("renders a player head without the overlay when disabled", async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(buildTestSkinPng(), { status: 200, headers: { "content-type": "image/png" } }),
+    );
+
+    const head = await renderPlayerHead("https://example.com/skin.png", {
+      size: 8,
+      overlay: false,
+    });
+    const decoded = PNG.sync.read(head.buffer);
+    expect([decoded.data[0], decoded.data[1], decoded.data[2], decoded.data[3]]).toEqual([
+      255, 0, 0, 255,
+    ]);
+  });
+
+  it("renders a bust with the body flanked by the arms", async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(buildTestSkinPng(), { status: 200, headers: { "content-type": "image/png" } }),
+    );
+
+    const bust = await renderPlayerBust("https://example.com/skin.png", { size: 16 });
+    expect(bust.width).toBe(16);
+    expect(bust.height).toBe(20);
+
+    const decoded = PNG.sync.read(bust.buffer);
+    const pixelAt = (x, y) => {
+      const idx = (y * bust.width + x) * 4;
+      return [
+        decoded.data[idx],
+        decoded.data[idx + 1],
+        decoded.data[idx + 2],
+        decoded.data[idx + 3],
+      ];
+    };
+
+    expect(pixelAt(0, 8)).toEqual([255, 255, 0, 255]); // right arm: yellow
+    expect(pixelAt(4, 8)).toEqual([0, 255, 0, 255]); // body: green
+    expect(pixelAt(12, 8)).toEqual([0, 255, 255, 255]); // left arm: cyan
+  });
+
+  it("mirrors the right arm for legacy 64x32 skins with no left-limb data", async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(buildTestSkinPng({ height: 32 }), {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+    );
+
+    const bust = await renderPlayerBust("https://example.com/skin.png", { size: 16 });
+    const decoded = PNG.sync.read(bust.buffer);
+    const idx = (8 * bust.width + 12) * 4;
+    expect([
+      decoded.data[idx],
+      decoded.data[idx + 1],
+      decoded.data[idx + 2],
+      decoded.data[idx + 3],
+    ]).toEqual([255, 255, 0, 255]); // mirrored right arm: yellow
+  });
+
+  it("throws when the resolved player has no skin texture", async () => {
+    mockFetchSequence([
+      { json: profileJson },
+      { json: { id: profileJson.id, name: "26bz", properties: [] } },
+    ]);
+
+    const err = await renderPlayerHead("26bz").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(404);
   });
 });
 
