@@ -150,6 +150,8 @@ function blit(dest, src, region, destX, destY, { mirror = false, alphaBlend = fa
   }
 }
 
+// Integer upscale only: `size` targets the longest native dimension, but the
+// result never shrinks below native resolution (a scale below 1x clamps to 1x).
 function scaleNearest(image, targetSize) {
   const scale = Math.max(1, Math.floor(targetSize / Math.max(image.width, image.height)));
   const width = image.width * scale;
