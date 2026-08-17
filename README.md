@@ -12,6 +12,8 @@ Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, 
 
 > This toolkit wraps Mojang APIs. Rate limits and availability still apply. Write endpoints (name change, skin upload) are not yet included.
 
+> ESM-only: this package ships as `"type": "module"` with no CommonJS build. Use `import`, or dynamic `import()` from CommonJS.
+
 ## Installation
 
 <!-- automd:pm-install name="minecraft-toolkit" -->
@@ -121,6 +123,7 @@ console.log(head.dataUri); // "data:image/png;base64,..."
 - `overlay` (default `true`) toggles the hat/jacket/sleeve overlay layers.
 - `model` forces `"default"` or `"slim"` arm width when rendering from a raw skin URL (model is auto-detected when resolving by username/UUID).
 - `renderPlayerBust` mirrors the right arm for legacy 64x32 skins that don't carry left-limb pixel data.
+- `size` is an upscale target for the image's longest native dimension using nearest-neighbor scaling (integer multiples only, so output size is always a whole multiple of the native resolution). It never downscales below native resolution — requesting a `size` smaller than native returns the unscaled image.
 
 ## Caching & Retries
 
@@ -156,7 +159,7 @@ const watcher = watchServerStatus("mc.hypixel.net", {
 watcher.stop();
 ```
 
-`onUpdate` fires on every poll; `onChange` fires only when `online`, `players.online`, `players.max`, or `motd` differ from the previous poll. Accepts the same options as `fetchServerStatus`.
+`onUpdate` fires on every poll; `onChange` fires only when `online`, `players.online`, `players.max`, or `motd` differ from the previous poll. Accepts the same options as `fetchServerStatus`. `intervalMs` is clamped to a 1000ms floor to avoid hammering the target server.
 
 ## Account Helpers
 
@@ -265,6 +268,44 @@ convertPrefix("&aHi", "toSection"); // "§aHi"
 ```
 
 `getMaps()` exposes the color and format metadata if you want to build custom renderers.
+
+## HTTP Routes (h3)
+
+Mount ready-made REST endpoints for the player, account, and server helpers on top of [h3](https://h3.dev). This is a separate subpath export so that consumers who only need the plain function calls above aren't forced to install h3 — add it yourself first:
+
+```sh
+pnpm add h3
+```
+
+```ts
+import { createPlayerApp } from "minecraft-toolkit/h3";
+
+const { app } = createPlayerApp();
+
+export default app; // or app.request(...) directly, or mount into an existing H3 app
+```
+
+- `createPlayerApp(options?)` returns `{ app, handlers }`, a standalone `H3` app with every route below wired up.
+- `createPlayerHandlers()` returns the raw `defineHandler` functions if you want to mount them yourself under different paths.
+- `playerPlugin` is an `H3` plugin (`app.register(playerPlugin)` / pass to an existing app) that adds the same routes without creating a new app instance.
+
+| Method | Path                               | Notes                                                                         |
+| ------ | ---------------------------------- | ----------------------------------------------------------------------------- |
+| GET    | `/player/:username`                | `fetchPlayerProfile`                                                          |
+| GET    | `/player/:username/skin`           | `fetchPlayerSkin`                                                             |
+| GET    | `/player/:username/summary`        | `fetchPlayerSummary`                                                          |
+| GET    | `/player/:username/uuid`           | `fetchPlayerUUID`                                                             |
+| GET    | `/player/:input/resolve`           | `resolvePlayer`                                                               |
+| GET    | `/player/:username/exists`         | `playerExists`                                                                |
+| POST   | `/players/batch`                   | `fetchPlayers` (body: `{ usernames, delayMs? }`, max 100)                     |
+| GET    | `/account/namechange`              | requires `Authorization: Bearer <token>`                                      |
+| GET    | `/account/name/:name/availability` | requires `Authorization: Bearer <token>`                                      |
+| POST   | `/account/gift-code/validate`      | requires `Authorization: Bearer <token>`, body `{ code }`                     |
+| GET    | `/account/blocked-servers`         | `fetchBlockedServers`                                                         |
+| GET    | `/server/:address/status`          | `fetchServerStatus`; query: `edition`, `port`, `timeoutMs`, `protocolVersion` |
+| GET    | `/server/:address/icon`            | `fetchServerIcon`; query: `port`, `timeoutMs`, `protocolVersion`              |
+
+> **SSRF warning:** the `/server/:address/status` and `/server/:address/icon` routes accept an arbitrary `address`/`port` from the caller and open a raw socket to it, with no allowlist or private-IP blocking. If you mount this app on a publicly reachable server, anyone can use it to probe your internal network (loopback, RFC1918 ranges, cloud metadata endpoints) via response timing/content. Put these routes behind your own allowlist, auth, or network egress restrictions before exposing them publicly.
 
 ## License
 
