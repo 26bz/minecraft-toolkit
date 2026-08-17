@@ -27,7 +27,6 @@ export {
   validateGiftCode,
   fetchBlockedServers,
 } from "./src/player/account/index.js";
-export { createPlayerApp, createPlayerHandlers, playerPlugin } from "./src/h3/routes.js";
 export {
   fetchServerStatus,
   fetchJavaServerStatus,

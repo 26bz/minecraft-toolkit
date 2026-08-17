@@ -11,9 +11,6 @@ importers:
 
   .:
     dependencies:
-      h3:
-        specifier: ^2.0.1-rc.22
-        version: 2.0.1-rc.22
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
@@ -24,6 +21,9 @@ importers:
       automd:
         specifier: ^0.4.3
         version: 0.4.3(magicast@0.5.3)
+      h3:
+        specifier: ^2.0.1-rc.22
+        version: 2.0.1-rc.22
       husky:
         specifier: ^9.1.7
         version: 9.1.7

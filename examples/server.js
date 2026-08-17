@@ -1,4 +1,4 @@
-import { createPlayerApp } from "../index.js";
+import { createPlayerApp } from "../src/h3/routes.js";
 import { serve } from "h3";
 
 const { app } = createPlayerApp();
