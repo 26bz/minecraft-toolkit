@@ -515,6 +515,69 @@ describe("network parsing", () => {
       port: 25565,
     });
   });
+
+  it("prefers an explicit override port and passes the host through verbatim", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("play.example.net", 19132, 25565)).toEqual({
+      host: "play.example.net",
+      port: 19132,
+    });
+  });
+
+  it("falls back to the fallback port for a bare host", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("play.example.net", undefined, 25565)).toEqual({
+      host: "play.example.net",
+      port: 25565,
+    });
+  });
+
+  it("falls back to the fallback port for an unbracketed multi-colon host", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("::1", undefined, 25565)).toEqual({
+      host: "::1",
+      port: 25565,
+    });
+  });
+
+  it("falls back to the fallback port when the embedded port is empty", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("play.example.net:", undefined, 25565)).toEqual({
+      host: "play.example.net:",
+      port: 25565,
+    });
+  });
+});
+
+describe("java status SRV skip heuristic", () => {
+  afterEach(() => {
+    vi.doUnmock("node:dns/promises");
+    vi.resetModules();
+  });
+
+  it("does not query SRV records for a bracketed IPv6 host with an explicit port", async () => {
+    const resolveSrv = vi.fn();
+    vi.doMock("node:dns/promises", () => ({ resolveSrv }));
+    vi.resetModules();
+    const { fetchJavaServerStatus: freshFetchJavaServerStatus } =
+      await import("../src/server/java/status.js");
+
+    await freshFetchJavaServerStatus("[::1]:1", { timeoutMs: 50 }).catch(() => {});
+
+    expect(resolveSrv).not.toHaveBeenCalled();
+  });
+
+  it("queries SRV records when no port is provided", async () => {
+    const resolveSrv = vi.fn().mockRejectedValue(new Error("no SRV record"));
+    vi.doMock("node:dns/promises", () => ({ resolveSrv }));
+    vi.resetModules();
+    const { fetchJavaServerStatus: freshFetchJavaServerStatus } =
+      await import("../src/server/java/status.js");
+
+    await freshFetchJavaServerStatus("play.example.net", { timeoutMs: 50 }).catch(() => {});
+
+    expect(resolveSrv).toHaveBeenCalledWith("_minecraft._tcp.play.example.net");
+  });
 });
 
 describe("server status transports", () => {
