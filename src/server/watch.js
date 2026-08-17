@@ -1,6 +1,7 @@
 import { fetchServerStatus } from "./status.js";
 
 const DEFAULT_INTERVAL_MS = 30_000;
+const MIN_INTERVAL_MS = 1000;
 
 export function watchServerStatus(address, options = {}) {
   const {
@@ -11,6 +12,8 @@ export function watchServerStatus(address, options = {}) {
     onError,
     ...statusOptions
   } = options;
+
+  const pollIntervalMs = Math.max(MIN_INTERVAL_MS, intervalMs);
 
   let stopped = false;
   let timer = null;
@@ -32,7 +35,7 @@ export function watchServerStatus(address, options = {}) {
       onError?.(error);
     } finally {
       if (!stopped) {
-        timer = setTimeout(poll, intervalMs);
+        timer = setTimeout(poll, pollIntervalMs);
       }
     }
   }
@@ -45,7 +48,7 @@ export function watchServerStatus(address, options = {}) {
     }
   }
 
-  timer = setTimeout(poll, immediate ? 0 : intervalMs);
+  timer = setTimeout(poll, immediate ? 0 : pollIntervalMs);
 
   return { stop };
 }

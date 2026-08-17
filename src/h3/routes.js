@@ -179,7 +179,7 @@ export function createPlayerApp(options = {}) {
     onError((error, event) => {
       const statusCode = error.status ?? 500;
       setResponseStatus(event, statusCode);
-      return { error: error.cause?.message ?? error.message, statusCode };
+      return { error: error.message, statusCode };
     }),
   );
 

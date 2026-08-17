@@ -31,8 +31,9 @@ export async function fetchJavaServerStatus(address, options = {}) {
   const normalized = normalizeAddress(address);
 
   // Skip SRV when the caller explicitly provided a port (via options or embedded in address string)
+  const hasBracketedPort = /^\[[^\]]+\]:\d+$/.test(normalized);
   const colonCount = (normalized.match(/:/g) ?? []).length;
-  const portExplicit = options.port !== undefined || colonCount === 1;
+  const portExplicit = options.port !== undefined || hasBracketedPort || colonCount === 1;
 
   const { host: baseHost, port: basePort } = resolveAddress(
     normalized,
