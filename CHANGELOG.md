@@ -1,5 +1,34 @@
 # Changelog
 
+## v2.0.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.2.0...v2.0.0)
+
+### 🚀 Enhancements
+
+- ⚠️  Move h3 to an optional peer dependency, expose HTTP routes via minecraft-toolkit/h3 subpath ([8a0731d](https://github.com/26bz/minecraft-toolkit/commit/8a0731d))
+
+### 🩹 Fixes
+
+- Clamp watchServerStatus interval floor, skip SRV lookup for bracketed IPv6, simplify h3 error message ([b78dff8](https://github.com/26bz/minecraft-toolkit/commit/b78dff8))
+
+### 📖 Documentation
+
+- Document h3 HTTP routes, SSRF risk, ESM-only limitation, and render upscale-only sizing ([6574ee5](https://github.com/26bz/minecraft-toolkit/commit/6574ee5))
+- Note upscale-only behavior on scaleNearest ([23c4252](https://github.com/26bz/minecraft-toolkit/commit/23c4252))
+
+### ✅ Tests
+
+- Cover network address parsing edge cases and SRV skip heuristic ([69da74b](https://github.com/26bz/minecraft-toolkit/commit/69da74b))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Move h3 to an optional peer dependency, expose HTTP routes via minecraft-toolkit/h3 subpath ([8a0731d](https://github.com/26bz/minecraft-toolkit/commit/8a0731d))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v1.2.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.1.0...v1.2.0)
