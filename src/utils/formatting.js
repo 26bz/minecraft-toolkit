@@ -118,7 +118,7 @@ export function getMaps() {
   };
 }
 
-function tokenize(input) {
+export function tokenize(input) {
   const segments = [];
   let color = null;
   const formats = new Set();

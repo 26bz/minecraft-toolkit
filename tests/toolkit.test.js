@@ -24,11 +24,18 @@ import {
   hasCodes,
   convertPrefix,
   getMaps,
+  legacyToComponent,
+  componentToLegacy,
+  componentToMiniMessage,
+  miniMessageToComponent,
+  legacyToMiniMessage,
+  miniMessageToLegacy,
 } from "../index.js";
 import {
   fetchJavaServerStatus,
   fetchBedrockServerStatus,
   fetchServerStatus,
+  discoverServer,
   watchServerStatus,
   renderPlayerHead,
   renderPlayerBust,
@@ -482,6 +489,50 @@ describe("formatting helpers", () => {
   });
 });
 
+describe("text components", () => {
+  it("converts legacy codes to JSON components", () => {
+    const components = legacyToComponent("§aHello §lWorld");
+    expect(components).toEqual([
+      { text: "Hello ", color: "green" },
+      { text: "World", color: "green", bold: true },
+    ]);
+  });
+
+  it("round-trips components back to legacy codes", () => {
+    const legacy = componentToLegacy([
+      { text: "Hello ", color: "green" },
+      { text: "World", color: "green", bold: true },
+    ]);
+    expect(legacy).toBe("§aHello §a§lWorld");
+  });
+
+  it("flattens nested extra components", () => {
+    const legacy = componentToLegacy({
+      text: "",
+      extra: [{ text: "Hi", color: "red", italic: true }],
+    });
+    expect(legacy).toBe("§c§oHi");
+  });
+
+  it("converts components to and from MiniMessage tags", () => {
+    const mini = componentToMiniMessage([{ text: "Hi", color: "red", bold: true }]);
+    expect(mini).toBe("<red><bold>Hi</bold></red>");
+
+    const components = miniMessageToComponent("<red><bold>Hi</bold></red> there");
+    expect(components).toEqual([{ text: "Hi", color: "red", bold: true }, { text: " there" }]);
+  });
+
+  it("supports hex colors in MiniMessage", () => {
+    const components = miniMessageToComponent("<#ff00aa>Hi</#ff00aa>");
+    expect(components).toEqual([{ text: "Hi", color: "#ff00aa" }]);
+  });
+
+  it("chains legacy <-> MiniMessage conversions", () => {
+    expect(legacyToMiniMessage("§cHi")).toBe("<red>Hi</red>");
+    expect(miniMessageToLegacy("<red>Hi</red>")).toBe("§cHi");
+  });
+});
+
 describe("resolvePlayer error contract", () => {
   it("throws MinecraftToolkitError for empty string", async () => {
     await expect(resolvePlayer("")).rejects.toBeInstanceOf(MinecraftToolkitError);
@@ -659,6 +710,64 @@ describe("server status transports", () => {
     const err = await fetchServerStatus("127.0.0.1", { edition: "bogus" }).catch((e) => e);
     expect(err).toBeInstanceOf(MinecraftToolkitError);
     expect(err.statusCode).toBe(400);
+  });
+});
+
+describe("discoverServer", () => {
+  it("returns the Java status when only the Java probe succeeds", async () => {
+    const server = createServer((socket) => {
+      let seenRequest = false;
+      socket.on("data", (chunk) => {
+        if (!seenRequest) {
+          seenRequest = true;
+          socket.write(buildJavaStatusResponse());
+          return;
+        }
+        if (chunk.length > 0) {
+          socket.write(buildJavaPongPacket());
+          socket.end();
+        }
+      });
+    });
+
+    const address = await listenTcp(server);
+    const status = await discoverServer("127.0.0.1", {
+      javaPort: address.port,
+      bedrockPort: 1,
+      timeoutMs: 500,
+    });
+    server.close();
+
+    expect(status.edition).toBe("java");
+    expect(status.motd).toBe("Toolkit Test Server");
+  });
+
+  it("returns the Bedrock status when only the Bedrock probe succeeds", async () => {
+    const socket = createSocket("udp4");
+    socket.on("message", (_message, rinfo) => {
+      socket.send(buildBedrockStatusMessage(rinfo.port), rinfo.port, rinfo.address);
+    });
+
+    const address = await listenUdp(socket);
+    const status = await discoverServer("127.0.0.1", {
+      javaPort: 1,
+      bedrockPort: address.port,
+      timeoutMs: 500,
+    });
+    socket.close();
+
+    expect(status.edition).toBe("bedrock");
+    expect(status.motd).toBe("Toolkit Bedrock Server");
+  });
+
+  it("throws when neither probe succeeds", async () => {
+    const err = await discoverServer("127.0.0.1", {
+      javaPort: 1,
+      bedrockPort: 1,
+      timeoutMs: 300,
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
   });
 });
 

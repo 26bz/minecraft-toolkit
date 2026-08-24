@@ -143,6 +143,24 @@ export function hasCodes(input: string): boolean;
 export function convertPrefix(input: string, direction?: "toSection" | "toAmpersand"): string;
 export function getMaps(): FormattingMaps;
 
+export interface TextComponent {
+  text: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underlined?: boolean;
+  strikethrough?: boolean;
+  obfuscated?: boolean;
+  extra?: Array<TextComponent | string>;
+}
+
+export function legacyToComponent(input: string): TextComponent[];
+export function componentToLegacy(component: TextComponent | TextComponent[] | string): string;
+export function componentToMiniMessage(component: TextComponent | TextComponent[] | string): string;
+export function miniMessageToComponent(input: string): TextComponent[];
+export function legacyToMiniMessage(input: string): string;
+export function miniMessageToLegacy(input: string): string;
+
 export function getSkinURL(profile: PlayerProfile | PlayerSkin): string | null;
 export function getCapeURL(profile: PlayerProfile | PlayerSkin): string | null;
 export function getSkinModel(profile: PlayerProfile | PlayerSkin): "default" | "slim";
@@ -250,6 +268,18 @@ export interface WatchHandle {
 }
 
 export function watchServerStatus(address: string, options?: WatchServerStatusOptions): WatchHandle;
+
+export interface DiscoverServerOptions {
+  javaPort?: number;
+  bedrockPort?: number;
+  timeoutMs?: number;
+  protocolVersion?: number;
+}
+
+export function discoverServer(
+  address: string,
+  options?: DiscoverServerOptions,
+): Promise<ServerStatus>;
 
 export interface VotifierVoteOptions {
   host: string;

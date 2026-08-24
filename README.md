@@ -206,6 +206,24 @@ console.log(javaStatus.players.online, bedrockStatus.motd);
 Both helpers normalize MOTD text, favicon/Base64 icons, latency, and version info. Errors surface as
 `MinecraftToolkitError` with contextual status codes.
 
+### Server Discovery
+
+Probe Java and Bedrock in parallel when you don't know which edition a server runs.
+
+```ts
+import { discoverServer } from "minecraft-toolkit";
+
+const status = await discoverServer("play.example.net", {
+  javaPort: 25565,
+  bedrockPort: 19132,
+  timeoutMs: 3000,
+});
+
+console.log(status.edition, status.motd);
+```
+
+`discoverServer` runs `fetchJavaServerStatus` and `fetchBedrockServerStatus` concurrently (so the round-trip is capped by the slower of the two, not their sum), returning the Java result if it succeeded and otherwise the Bedrock result. It throws `MinecraftToolkitError` only when neither probe succeeds.
+
 ### Server Icon Helper
 
 ```ts
@@ -268,6 +286,38 @@ convertPrefix("&aHi", "toSection"); // "§aHi"
 ```
 
 `getMaps()` exposes the color and format metadata if you want to build custom renderers.
+
+## Text Components (JSON & MiniMessage)
+
+Convert between legacy `§`/`&` codes, Minecraft's modern JSON text component format, and [MiniMessage](https://docs.advntr.dev/minimessage/) tags.
+
+```ts
+import {
+  legacyToComponent,
+  componentToLegacy,
+  componentToMiniMessage,
+  miniMessageToComponent,
+  legacyToMiniMessage,
+  miniMessageToLegacy,
+} from "minecraft-toolkit";
+
+legacyToComponent("§aHello §lWorld");
+// [{ text: "Hello ", color: "green" }, { text: "World", color: "green", bold: true }]
+
+componentToLegacy([{ text: "Hi", color: "red", bold: true }]); // "§c§lHi"
+
+componentToMiniMessage([{ text: "Hi", color: "red", bold: true }]); // "<red><bold>Hi</bold></red>"
+miniMessageToComponent("<red><bold>Hi</bold></red>");
+// [{ text: "Hi", color: "red", bold: true }]
+
+legacyToMiniMessage("§cHi"); // "<red>Hi</red>"
+miniMessageToLegacy("<red>Hi</red>"); // "§cHi"
+```
+
+- `legacyToComponent`/`miniMessageToComponent` always return an array of `{ text, color?, bold?, italic?, underlined?, strikethrough?, obfuscated? }` segments.
+- `componentToLegacy`/`componentToMiniMessage` accept a single component, an array of components, or a component with nested `extra` (Minecraft's standard nesting shape).
+- MiniMessage parsing supports color names, `<#rrggbb>` hex, `<color:name>`/`<colour:name>`, format tags (`bold`/`b`, `italic`/`i`, `underlined`/`u`, `strikethrough`/`st`, `obfuscated`/`obf`), and `<reset>`. It's a practical subset — click/hover events and gradients aren't supported.
+- Colors without a matching legacy color code (arbitrary hex) are dropped when converting to legacy output, since legacy codes can't represent them.
 
 ## HTTP Routes (h3)
 
