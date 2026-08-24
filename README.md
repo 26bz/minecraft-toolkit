@@ -266,6 +266,36 @@ console.log(result.acknowledged, result.version, result.protocol);
 - Provide either a legacy RSA public key (for protocol v1) **or** a NuVotifier token (protocol v2). Server listing sites typically store each server's token and pass it here; `protocol: "auto"` will select the right flow based on the handshake.
 - `timestamp` accepts a `Date` or millisecond value (default: `Date.now()`). All failures bubble as `MinecraftToolkitError`.
 
+## RCON Client
+
+Send admin commands to a Java server with RCON enabled (`enable-rcon=true` in `server.properties`).
+
+```ts
+import { createRconClient, sendRconCommand } from "minecraft-toolkit";
+
+// one-shot: connects, authenticates, runs a single command, then closes
+const list = await sendRconCommand({
+  host: "mc.example.net",
+  port: 25575,
+  password: process.env.RCON_PASSWORD,
+  command: "list",
+});
+
+// persistent client for multiple commands
+const client = await createRconClient({
+  host: "mc.example.net",
+  password: process.env.RCON_PASSWORD,
+});
+
+await client.execute("say Server restarting in 5 minutes");
+await client.execute("save-all");
+client.close();
+```
+
+- `port` defaults to `25575`. Authentication failures (wrong password) throw `MinecraftToolkitError` with `statusCode: 401`; connection/timeout issues surface as `504`/`502`.
+- `client.execute(command)` can be called repeatedly on the same connection; `client.close()` tears down the socket and rejects any in-flight commands.
+- RCON sends commands and credentials in plaintext — only use it over a trusted network (VPN, SSH tunnel, or localhost), never expose the RCON port directly to the internet.
+
 ## Minecraft Formatting Renderer
 
 Convert legacy `§` or `&` codes into safe HTML fragments or CSS class spans.

@@ -51,6 +51,7 @@ export {
   miniMessageToLegacy,
 } from "./src/utils/textComponents.js";
 export { sendVotifierVote } from "./src/server/votifier/index.js";
+export { createRconClient, sendRconCommand } from "./src/server/rcon.js";
 export { fetchServerIcon } from "./src/server/icon.js";
 export { fetchJson, fetchRequest, withRetry } from "./src/utils/http/index.js";
 export { ResponseCache, createCache, withCache } from "./src/utils/cache/index.js";

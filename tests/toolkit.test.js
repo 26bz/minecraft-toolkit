@@ -37,6 +37,8 @@ import {
   fetchServerStatus,
   discoverServer,
   watchServerStatus,
+  createRconClient,
+  sendRconCommand,
   renderPlayerHead,
   renderPlayerBust,
   withRetry,
@@ -148,6 +150,54 @@ function buildBedrockStatusMessage(port) {
   message.writeUInt16BE(data.length, 33);
   data.copy(message, 35);
   return message;
+}
+
+function encodeRconPacket(id, type, body) {
+  const bodyBuffer = Buffer.from(body, "utf8");
+  const payloadLength = 4 + 4 + bodyBuffer.length + 2;
+  const packet = Buffer.alloc(4 + payloadLength);
+  packet.writeInt32LE(payloadLength, 0);
+  packet.writeInt32LE(id, 4);
+  packet.writeInt32LE(type, 8);
+  bodyBuffer.copy(packet, 12);
+  return packet;
+}
+
+function readRconPacket(buffer) {
+  if (buffer.length < 4) {
+    return null;
+  }
+  const length = buffer.readInt32LE(0);
+  if (buffer.length < 4 + length) {
+    return null;
+  }
+  const id = buffer.readInt32LE(4);
+  const type = buffer.readInt32LE(8);
+  const body = buffer.toString("utf8", 12, 4 + length - 2);
+  return { id, type, body, consumed: 4 + length };
+}
+
+function createMockRconServer(password) {
+  return createServer((socket) => {
+    let buffer = Buffer.alloc(0);
+    socket.on("data", (chunk) => {
+      buffer = Buffer.concat([buffer, chunk]);
+      let packet = readRconPacket(buffer);
+      while (packet) {
+        buffer = buffer.subarray(packet.consumed);
+        if (packet.type === 3) {
+          socket.write(
+            packet.body === password
+              ? encodeRconPacket(packet.id, 2, "")
+              : encodeRconPacket(-1, 2, ""),
+          );
+        } else if (packet.type === 2) {
+          socket.write(encodeRconPacket(packet.id, 0, `echo:${packet.body}`));
+        }
+        packet = readRconPacket(buffer);
+      }
+    });
+  });
 }
 
 async function listenTcp(server) {
@@ -765,6 +815,86 @@ describe("discoverServer", () => {
       javaPort: 1,
       bedrockPort: 1,
       timeoutMs: 300,
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+  });
+});
+
+describe("rcon client", () => {
+  it("authenticates and executes multiple commands", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const client = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 2000,
+    });
+
+    expect(await client.execute("list")).toBe("echo:list");
+    expect(await client.execute("say hi")).toBe("echo:say hi");
+
+    client.close();
+    server.close();
+  });
+
+  it("rejects with 401 on bad password", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const err = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "wrong",
+      timeoutMs: 2000,
+    }).catch((e) => e);
+
+    server.close();
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(401);
+  });
+
+  it("sendRconCommand connects, runs one command, and closes", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const response = await sendRconCommand({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      command: "list",
+      timeoutMs: 2000,
+    });
+
+    server.close();
+    expect(response).toBe("echo:list");
+  });
+
+  it("rejects executing after the client is closed", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const client = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 2000,
+    });
+    client.close();
+    server.close();
+
+    const err = await client.execute("list").catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+  });
+
+  it("rejects when the host is unreachable", async () => {
+    const err = await createRconClient({
+      host: "127.0.0.1",
+      port: 1,
+      password: "secret",
+      timeoutMs: 500,
     }).catch((e) => e);
 
     expect(err).toBeInstanceOf(MinecraftToolkitError);

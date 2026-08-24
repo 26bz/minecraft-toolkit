@@ -302,6 +302,26 @@ export interface VotifierVoteResult {
 
 export function sendVotifierVote(options: VotifierVoteOptions): Promise<VotifierVoteResult>;
 
+export interface RconClientOptions {
+  host: string;
+  port?: number;
+  password: string;
+  timeoutMs?: number;
+}
+
+export interface RconClient {
+  execute(command: string): Promise<string>;
+  close(): void;
+}
+
+export function createRconClient(options: RconClientOptions): Promise<RconClient>;
+
+export interface RconCommandOptions extends RconClientOptions {
+  command: string;
+}
+
+export function sendRconCommand(options: RconCommandOptions): Promise<string>;
+
 export interface NameChangeInfo {
   changedAt: string | null;
   nameChangeAllowed: boolean;
