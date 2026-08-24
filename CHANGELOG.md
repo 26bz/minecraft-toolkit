@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.1.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v2.0.0...v2.1.0)
+
+### 🚀 Enhancements
+
+- Add discoverServer for parallel java/bedrock probing and legacy/JSON/MiniMessage text component conversion ([68e2fa0](https://github.com/26bz/minecraft-toolkit/commit/68e2fa0))
+- Add RCON client for sending admin commands to Java servers ([c54f26f](https://github.com/26bz/minecraft-toolkit/commit/c54f26f))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](https://github.com/26bz))
+
 ## v2.0.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v1.2.0...v2.0.0)
