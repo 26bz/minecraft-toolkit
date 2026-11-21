@@ -1411,6 +1411,16 @@ describe("validation helpers", () => {
 });
 
 describe("ResponseCache", () => {
+  it("bounds the default cache size", () => {
+    const cache = createCache();
+    for (let index = 0; index < 1005; index += 1) {
+      cache.set(`key:${index}`, index);
+    }
+    expect(cache.size).toBe(1000);
+    expect(cache.get("key:0")).toBeUndefined();
+    expect(cache.get("key:1004")).toBe(1004);
+  });
+
   it("withCache reuses cached falsy values", async () => {
     const cache = createCache();
     const resolver = vi.fn().mockResolvedValue(false);

@@ -1,5 +1,5 @@
 const DEFAULT_CACHE_TTL_MS = 30 * 1000;
-const DEFAULT_MAX_SIZE = Infinity;
+const DEFAULT_MAX_SIZE = 1000;
 
 export class ResponseCache {
   constructor(ttlMs = DEFAULT_CACHE_TTL_MS, maxSize = DEFAULT_MAX_SIZE) {

@@ -140,7 +140,7 @@ const profile = await withRetry(() =>
 ```
 
 - `withRetry(fn, options)` retries only on `MinecraftToolkitError` with `statusCode: 429`, honoring the Mojang `Retry-After` header (`retryAfter`) when present and falling back to exponential backoff (`minDelayMs`/`maxDelayMs`, default 3 retries).
-- `createCache({ ttlSeconds, maxSize })` returns a `ResponseCache` (or `null` when `{ cache: false }`); `withCache(cache, key, resolver)` is a no-op passthrough when `cache` is `null`.
+- `createCache({ ttlSeconds, maxSize })` returns a `ResponseCache` (or `null` when `{ cache: false }`), holding up to 1000 entries by default (pass `maxSize: Infinity` for no limit); `withCache(cache, key, resolver)` is a no-op passthrough when `cache` is `null`.
 
 ## Server Status Watcher
 
