@@ -60,7 +60,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "prepare": "husky install",
+    "prepare": "husky",
     "docs:sync": "automd"
   },
   "dependencies": {
