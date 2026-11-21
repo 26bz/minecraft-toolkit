@@ -21,17 +21,17 @@ const COLOR_CODES = freezeNested({
   d: { name: "light_purple", classSuffix: "light-purple", hex: "#ff55ff" },
   e: { name: "yellow", classSuffix: "yellow", hex: "#ffff55" },
   f: { name: "white", classSuffix: "white", hex: "#ffffff" },
-  g: { name: "minecoin_gold", classSuffix: "minecoin-gold", hex: "#e1c158" },
-  h: { name: "material_quartz", classSuffix: "material-quartz", hex: "#ece6d8" },
-  i: { name: "material_iron", classSuffix: "material-iron", hex: "#cacaca" },
-  j: { name: "material_netherite", classSuffix: "material-netherite", hex: "#4b4946" },
-  n: { name: "material_redstone", classSuffix: "material-redstone", hex: "#b02e26" },
-  p: { name: "material_prismarine", classSuffix: "material-prismarine", hex: "#1ba19b" },
-  q: { name: "material_obsidian", classSuffix: "material-obsidian", hex: "#0b0b0b" },
-  s: { name: "material_crimson", classSuffix: "material-crimson", hex: "#a02c44" },
-  t: { name: "material_gold", classSuffix: "material-gold", hex: "#d8af48" },
-  u: { name: "material_emerald", classSuffix: "material-emerald", hex: "#30c67c" },
-  v: { name: "material_diamond", classSuffix: "material-diamond", hex: "#5be5e5" },
+  g: { name: "minecoin_gold", classSuffix: "minecoin-gold", hex: "#efce16" },
+  h: { name: "material_quartz", classSuffix: "material-quartz", hex: "#d9ccb8" },
+  i: { name: "material_iron", classSuffix: "material-iron", hex: "#a9b4b7" },
+  j: { name: "material_netherite", classSuffix: "material-netherite", hex: "#8f727d" },
+  p: { name: "material_gold", classSuffix: "material-gold", hex: "#ffbf1e" },
+  q: { name: "material_emerald", classSuffix: "material-emerald", hex: "#13a045" },
+  s: { name: "material_diamond", classSuffix: "material-diamond", hex: "#5fecff" },
+  t: { name: "material_lapis", classSuffix: "material-lapis", hex: "#577bff" },
+  u: { name: "material_amethyst", classSuffix: "material-amethyst", hex: "#b66cdd" },
+  v: { name: "material_resin", classSuffix: "material-resin", hex: "#ff6a00" },
+  w: { name: "party_blue", classSuffix: "party-blue", hex: "#8bb3ff" },
 });
 
 const FORMAT_CODES = freezeNested({
@@ -44,7 +44,7 @@ const FORMAT_CODES = freezeNested({
 
 const VALID_CODE_CHARS = new Set([...Object.keys(COLOR_CODES), ...Object.keys(FORMAT_CODES), "r"]);
 const COLOR_KEYS = new Set(Object.keys(COLOR_CODES));
-const HAS_CODES_RE = /(?:§|&)[0-9a-fghijklmnopqrstuvr]/i;
+const HAS_CODES_RE = /(?:§|&)[0-9a-fghijklmnopqrstuvwr]/i;
 
 export function toHTML(input, options) {
   const value = coerceInput(input);
@@ -60,7 +60,7 @@ export function toHTML(input, options) {
 
 export function stripCodes(input) {
   const value = coerceInput(input);
-  return value.replaceAll(/(?:§|&)[0-9a-fghijklmnopqrstuvr]/gi, "");
+  return value.replaceAll(/(?:§|&)[0-9a-fghijklmnopqrstuvwr]/gi, "");
 }
 
 export function hasCodes(input) {

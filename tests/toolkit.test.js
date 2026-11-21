@@ -537,6 +537,24 @@ describe("formatting helpers", () => {
     expect(maps.colors.a.hex).toBe("#55ff55");
     expect(maps.formats.l.classSuffix).toBe("bold");
   });
+
+  it("treats §n and §m as Java underline/strikethrough, not Bedrock colors", () => {
+    expect(toHTML("§nUnder")).toBe('<span style="text-decoration: underline">Under</span>');
+    expect(toHTML("§mStrike")).toBe('<span style="text-decoration: line-through">Strike</span>');
+    expect(legacyToComponent("§aHi §nthere")).toEqual([
+      { text: "Hi ", color: "green" },
+      { text: "there", color: "green", underlined: true },
+    ]);
+    expect(getMaps().colors.n).toBeUndefined();
+    expect(getMaps().colors.m).toBeUndefined();
+  });
+
+  it("maps Bedrock material color codes", () => {
+    const { colors } = getMaps();
+    expect(colors.t.name).toBe("material_lapis");
+    expect(colors.v.name).toBe("material_resin");
+    expect(stripCodes("§wParty")).toBe("Party");
+  });
 });
 
 describe("text components", () => {
