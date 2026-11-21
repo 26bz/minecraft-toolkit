@@ -1,16 +1,32 @@
 import { DEFAULT_HEADERS } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
 
+const DEFAULT_HTTP_TIMEOUT_MS = 10_000;
+
 export async function fetchRequest(url, options = {}) {
+  const { timeoutMs = DEFAULT_HTTP_TIMEOUT_MS, signal, ...init } = options;
   try {
     return await fetch(url, {
-      ...options,
+      ...init,
+      signal: buildSignal(signal, timeoutMs),
       headers: {
         ...DEFAULT_HEADERS,
-        ...options.headers,
+        ...init.headers,
       },
     });
   } catch (error) {
+    if (error?.name === "TimeoutError") {
+      throw new MinecraftToolkitError(`Timed out fetching ${safeUrl(url)}`, {
+        statusCode: 504,
+        cause: error,
+      });
+    }
+    if (error?.name === "AbortError") {
+      throw new MinecraftToolkitError(`Request to ${safeUrl(url)} was aborted`, {
+        statusCode: 499,
+        cause: error,
+      });
+    }
     throw new MinecraftToolkitError(`Failed to fetch ${safeUrl(url)}`, {
       statusCode: 502,
       cause: error,
@@ -18,8 +34,16 @@ export async function fetchRequest(url, options = {}) {
   }
 }
 
-export async function fetchJson(url, { notFoundMessage, headers } = {}) {
-  const response = await fetchRequest(url, { headers });
+function buildSignal(signal, timeoutMs) {
+  if (!(typeof timeoutMs === "number" && Number.isFinite(timeoutMs) && timeoutMs > 0)) {
+    return signal;
+  }
+  const timeout = AbortSignal.timeout(timeoutMs);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
+export async function fetchJson(url, { notFoundMessage, headers, timeoutMs, signal } = {}) {
+  const response = await fetchRequest(url, { headers, timeoutMs, signal });
 
   if (response.status === 404 && notFoundMessage) {
     throw new MinecraftToolkitError(notFoundMessage, { statusCode: 404 });

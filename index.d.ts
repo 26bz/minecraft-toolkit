@@ -337,10 +337,18 @@ export function checkNameAvailability(name: string, accessToken: string): Promis
 export function validateGiftCode(code: string, accessToken: string): Promise<boolean>;
 export function fetchBlockedServers(): Promise<string[]>;
 
-export function fetchRequest(url: string, options?: RequestInit): Promise<Response>;
+export function fetchRequest(
+  url: string,
+  options?: RequestInit & { timeoutMs?: number },
+): Promise<Response>;
 export function fetchJson<T = unknown>(
   url: string,
-  options?: { notFoundMessage?: string; headers?: HeadersInit },
+  options?: {
+    notFoundMessage?: string;
+    headers?: HeadersInit;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  },
 ): Promise<T>;
 
 export interface RetryOptions {

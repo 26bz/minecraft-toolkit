@@ -1219,6 +1219,33 @@ describe("public HTTP utilities", () => {
     expect(err).toBeInstanceOf(MinecraftToolkitError);
     expect(err.statusCode).toBe(404);
   });
+
+  it("times out a hanging request with 504", async () => {
+    globalThis.fetch = vi.fn(
+      (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(signal.reason));
+        }),
+    );
+    const err = await fetchJson("https://example.com/slow", { timeoutMs: 50 }).catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(504);
+  });
+
+  it("maps a caller abort to 499", async () => {
+    globalThis.fetch = vi.fn(
+      (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(signal.reason));
+        }),
+    );
+    const controller = new AbortController();
+    const pending = fetchRequest("https://example.com/slow", { signal: controller.signal });
+    controller.abort();
+    const err = await pending.catch((e) => e);
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(499);
+  });
 });
 
 describe("skin rendering", () => {
