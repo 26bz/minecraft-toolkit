@@ -296,6 +296,7 @@ describe("player helper API", () => {
 
     const { id } = await fetchPlayerUUID("26bz");
     expect(id).toBe(profileJson.id);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 
     const reverse = await fetchUsernameByUUID(profileJson.id);
     expect(reverse).toEqual({ id: profileJson.id, name: "26bz" });

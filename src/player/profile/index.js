@@ -67,10 +67,14 @@ export async function fetchPlayerSkin(username) {
 }
 
 export async function fetchPlayerUUID(username) {
-  const profile = await fetchPlayerProfile(username);
+  const normalizedUsername = normalizeUsername(username);
+  const identity = await fetchJson(
+    `${MOJANG_PROFILE_BASE}/${encodeURIComponent(normalizedUsername)}`,
+    { notFoundMessage: "Player not found" },
+  );
   return {
-    id: profile.id,
-    name: profile.name,
+    id: identity.id,
+    name: identity.name,
   };
 }
 
