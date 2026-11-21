@@ -4,9 +4,11 @@
 
 [![npm version](https://img.shields.io/npm/v/minecraft-toolkit)](https://npmjs.com/package/minecraft-toolkit)
 [![npm downloads](https://img.shields.io/npm/dm/minecraft-toolkit)](https://npm.chart.dev/minecraft-toolkit)
-[![license](https://img.shields.io/github/license/26bz/minecraft-toolkit)](https://github.com/26bz/minecraft-toolkit/blob/main/LICENSE)
+[![license](https://img.shields.io/github/license/26bz/minecraft-toolkit)](https://github.com/26bz/minecraft-toolkit/blob/master/LICENSE)
 
 <!-- /automd -->
+
+[![ci](https://github.com/26bz/minecraft-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/26bz/minecraft-toolkit/actions/workflows/ci.yml)
 
 Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, Java/Bedrock server status probes, and Votifier (v1/v2) clients for Node and other fetch-capable runtimes. Some helpers rely on Node networking or binary modules.
 
@@ -390,7 +392,7 @@ export default app; // or app.request(...) directly, or mount into an existing H
 
 ## License
 
-Published under the [MIT](https://github.com/26bz/minecraft-toolkit/blob/main/LICENSE) license.
+Published under the [MIT](https://github.com/26bz/minecraft-toolkit/blob/master/LICENSE) license.
 Made by [26bz](https://github.com/26bz)
 <br><br>
 <a href="https://github.com/26bz/minecraft-toolkit/graphs/contributors">
