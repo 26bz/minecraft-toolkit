@@ -345,6 +345,14 @@ describe("player helper API", () => {
     expect(results[1].error).toBeInstanceOf(Error);
   });
 
+  it("dedupes batch usernames case-insensitively", async () => {
+    mockFetchSequence([{ json: profileJson }, { json: sessionJson }]);
+
+    const results = await fetchPlayers(["26bz", "26BZ", " 26bz "], { delayMs: 0 });
+    expect(results).toHaveLength(1);
+    expect(results[0].username).toBe("26bz");
+  });
+
   it("checks existence and summary", async () => {
     mockFetchSequence([
       { json: profileJson },

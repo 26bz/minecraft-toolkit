@@ -102,7 +102,14 @@ export async function fetchPlayers(usernames, options = {}) {
     return [];
   }
 
-  const deduped = Array.from(new Set(usernames.map((name) => normalizeUsername(name))));
+  const unique = new Map();
+  for (const name of usernames) {
+    const normalized = normalizeUsername(name);
+    if (!unique.has(normalized.toLowerCase())) {
+      unique.set(normalized.toLowerCase(), normalized);
+    }
+  }
+  const deduped = Array.from(unique.values());
   const results = [];
 
   for (let index = 0; index < deduped.length; index += 1) {
