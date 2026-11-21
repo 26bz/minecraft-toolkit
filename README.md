@@ -10,7 +10,9 @@
 
 [![ci](https://github.com/26bz/minecraft-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/26bz/minecraft-toolkit/actions/workflows/ci.yml)
 
-Lightweight Minecraft API + infrastructure toolkit: player profiles & textures, Java/Bedrock server status probes, and Votifier (v1/v2) clients for Node and other fetch-capable runtimes. Some helpers rely on Node networking or binary modules.
+Minecraft toolkit for Node.js. Ping Java and Bedrock servers, look up players by username or UUID, render skin heads, send Votifier votes, run RCON commands, and convert color codes, JSON text components and MiniMessage.
+
+Typed, ESM, one runtime dependency.
 
 > This toolkit wraps Mojang APIs. Rate limits and availability still apply. Write endpoints (name change, skin upload) are not yet included.
 
@@ -41,6 +43,46 @@ deno install minecraft-toolkit
 ```
 
 <!-- /automd -->
+
+## Quick Start
+
+```ts
+import { writeFile } from "node:fs/promises";
+import {
+  fetchServerStatus,
+  fetchPlayerUUID,
+  renderPlayerHead,
+  sendVotifierVote,
+  sendRconCommand,
+  toHTML,
+} from "minecraft-toolkit";
+
+const java = await fetchServerStatus("play.example.net");
+console.log(java.players?.online, java.motd);
+
+const bedrock = await fetchServerStatus("play.example.net", { edition: "bedrock" });
+
+const { id } = await fetchPlayerUUID("Notch");
+
+const head = await renderPlayerHead("Notch", { size: 64 });
+await writeFile("notch.png", head.buffer);
+
+await sendVotifierVote({
+  host: "play.example.net",
+  token: process.env.VOTIFIER_TOKEN,
+  serviceName: "MyServerList",
+  username: "Notch",
+  address: "203.0.113.10",
+});
+
+const players = await sendRconCommand({
+  host: "play.example.net",
+  password: process.env.RCON_PASSWORD,
+  command: "list",
+});
+
+const motdHtml = toHTML(java.motd ?? "");
+```
 
 ## Core Helpers
 
