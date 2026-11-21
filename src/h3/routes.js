@@ -117,7 +117,7 @@ export function createPlayerHandlers() {
     );
     const icon = await fetchServerIcon(address, readProbeQuery(getQuery(event)));
 
-    return icon.buffer;
+    return new Response(icon.buffer, { headers: { "content-type": "image/png" } });
   });
 
   const serverStatusHandler = defineHandler(async (event) => {

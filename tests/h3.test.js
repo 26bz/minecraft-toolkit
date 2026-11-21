@@ -231,4 +231,19 @@ describe("h3 probe query parsing", () => {
     expect(fetchServerStatus.mock.calls[0][1].timeoutMs).toBe(10_000);
     expect(fetchServerStatus.mock.calls[1][1].timeoutMs).toBeUndefined();
   });
+
+  it("serves the server icon as image/png", async () => {
+    vi.doMock("../src/server/icon.js", () => ({
+      fetchServerIcon: vi.fn().mockResolvedValue({ buffer: Buffer.from([0x89, 0x50]) }),
+    }));
+    vi.resetModules();
+    const { createPlayerApp: freshCreatePlayerApp } = await import("../src/h3/routes.js");
+    const { app } = freshCreatePlayerApp();
+
+    const response = await app.request("/server/example.com/icon");
+    vi.doUnmock("../src/server/icon.js");
+
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.from([0x89, 0x50]));
+  });
 });
