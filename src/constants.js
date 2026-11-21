@@ -15,7 +15,7 @@ export const DEFAULT_VOTIFIER_PORT = 8192;
 export const DEFAULT_RCON_PORT = 25575;
 export const DEFAULT_CACHE_TTL_SECONDS = 30;
 export const DEFAULT_TIMEOUT_MS = 5000;
-export const DEFAULT_PROTOCOL_VERSION = 760; // Minecraft 1.20.4
+export const DEFAULT_PROTOCOL_VERSION = 765;
 
 export const MOJANG_PROFILE_BASE = "https://api.mojang.com/users/profiles/minecraft";
 export const SESSION_PROFILE_BASE = "https://sessionserver.mojang.com/session/minecraft/profile";
