@@ -953,6 +953,47 @@ describe("rcon client", () => {
     expect(err).toBeInstanceOf(MinecraftToolkitError);
   });
 
+  it("keeps an idle client open past the timeout", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const client = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 200,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(await client.execute("list")).toBe("echo:list");
+    client.close();
+    server.close();
+  });
+
+  it("times out a command that gets no response", async () => {
+    const server = createServer((socket) => {
+      socket.on("data", (chunk) => {
+        if (chunk.readInt32LE(8) === 3) {
+          socket.write(encodeRconPacket(chunk.readInt32LE(4), 2, ""));
+        }
+      });
+    });
+    const address = await listenTcp(server);
+
+    const client = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 200,
+    });
+    const err = await client.execute("list").catch((e) => e);
+    client.close();
+    server.close();
+
+    expect(err).toBeInstanceOf(MinecraftToolkitError);
+    expect(err.statusCode).toBe(504);
+  });
+
   it("rejects when the host is unreachable", async () => {
     const err = await createRconClient({
       host: "127.0.0.1",

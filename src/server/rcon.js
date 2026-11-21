@@ -45,6 +45,7 @@ export function createRconClient(options = {}) {
 
     function failAll(error) {
       for (const request of pending.values()) {
+        clearTimeout(request.timer);
         request.reject(error);
       }
       pending.clear();
@@ -108,12 +109,14 @@ export function createRconClient(options = {}) {
             return;
           } else {
             authResolved = true;
+            socket.setTimeout(0);
             settleConnect(resolve, { execute: executeCommand, close: closeClient });
           }
         } else {
           const request = pending.get(packet.id);
           if (request) {
             pending.delete(packet.id);
+            clearTimeout(request.timer);
             request.resolve(packet.body);
           }
         }
@@ -142,10 +145,20 @@ export function createRconClient(options = {}) {
 
       return new Promise((resolveCommand, rejectCommand) => {
         const id = nextRequestId();
-        pending.set(id, { resolve: resolveCommand, reject: rejectCommand });
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          rejectCommand(
+            new MinecraftToolkitError(
+              `Timed out waiting for RCON response from ${resolvedHost}:${resolvedPort}`,
+              { statusCode: 504 },
+            ),
+          );
+        }, resolvedTimeout);
+        pending.set(id, { resolve: resolveCommand, reject: rejectCommand, timer });
         socket.write(encodePacket(id, PACKET_TYPE_COMMAND, command), (writeError) => {
           if (writeError) {
             pending.delete(id);
+            clearTimeout(timer);
             rejectCommand(makeError("Failed to send RCON command", writeError));
           }
         });
