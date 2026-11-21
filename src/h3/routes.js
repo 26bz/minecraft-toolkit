@@ -115,20 +115,7 @@ export function createPlayerHandlers() {
     const address = normalizeAddress(
       requireRouterParam(event, "address", "Server address parameter is required"),
     );
-    const query = getQuery(event);
-    const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
-    const timeoutMs =
-      typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
-    const protocolVersion =
-      typeof query.protocolVersion === "string"
-        ? Number.parseInt(query.protocolVersion, 10)
-        : undefined;
-
-    const icon = await fetchServerIcon(address, {
-      port,
-      timeoutMs,
-      protocolVersion,
-    });
+    const icon = await fetchServerIcon(address, readProbeQuery(getQuery(event)));
 
     return icon.buffer;
   });
@@ -139,20 +126,7 @@ export function createPlayerHandlers() {
     );
     const query = getQuery(event);
     const edition = typeof query.edition === "string" ? query.edition : undefined;
-    const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
-    const timeoutMs =
-      typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
-    const protocolVersion =
-      typeof query.protocolVersion === "string"
-        ? Number.parseInt(query.protocolVersion, 10)
-        : undefined;
-
-    return fetchServerStatus(address, {
-      edition,
-      port,
-      timeoutMs,
-      protocolVersion,
-    });
+    return fetchServerStatus(address, { edition, ...readProbeQuery(query) });
   });
 
   return {
@@ -246,6 +220,20 @@ export const playerPlugin = definePlugin((app) => {
 });
 
 const MAX_TOKEN_LENGTH = 4096;
+const MAX_PROBE_TIMEOUT_MS = 10_000;
+
+function readProbeQuery(query) {
+  const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
+  const parsedTimeout =
+    typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
+  const timeoutMs =
+    parsedTimeout > 0 ? Math.min(parsedTimeout, MAX_PROBE_TIMEOUT_MS) : undefined;
+  const protocolVersion =
+    typeof query.protocolVersion === "string"
+      ? Number.parseInt(query.protocolVersion, 10)
+      : undefined;
+  return { port, timeoutMs, protocolVersion };
+}
 
 function requireAccessToken(event) {
   const header = getRequestHeader(event, "authorization") ?? "";

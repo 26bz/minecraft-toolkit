@@ -208,3 +208,27 @@ describe("h3 integration", () => {
     expect(body).toEqual(["server1", "server2"]);
   });
 });
+
+describe("h3 probe query parsing", () => {
+  afterEach(() => {
+    vi.doUnmock("../src/server/status.js");
+    vi.resetModules();
+  });
+
+  it("caps timeoutMs on status probes", async () => {
+    const fetchServerStatus = vi.fn().mockResolvedValue({ online: true });
+    vi.doMock("../src/server/status.js", () => ({
+      fetchServerStatus,
+      fetchJavaServerStatus: vi.fn(),
+    }));
+    vi.resetModules();
+    const { createPlayerApp: freshCreatePlayerApp } = await import("../src/h3/routes.js");
+    const { app } = freshCreatePlayerApp();
+
+    await app.request("/server/example.com/status?timeoutMs=600000");
+    await app.request("/server/example.com/status?timeoutMs=-5");
+
+    expect(fetchServerStatus.mock.calls[0][1].timeoutMs).toBe(10_000);
+    expect(fetchServerStatus.mock.calls[1][1].timeoutMs).toBeUndefined();
+  });
+});

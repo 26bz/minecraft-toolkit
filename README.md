@@ -369,21 +369,21 @@ export default app; // or app.request(...) directly, or mount into an existing H
 - `createPlayerHandlers()` returns the raw `defineHandler` functions if you want to mount them yourself under different paths.
 - `playerPlugin` is an `H3` plugin (`app.register(playerPlugin)` / pass to an existing app) that adds the same routes without creating a new app instance.
 
-| Method | Path                               | Notes                                                                         |
-| ------ | ---------------------------------- | ----------------------------------------------------------------------------- |
-| GET    | `/player/:username`                | `fetchPlayerProfile`                                                          |
-| GET    | `/player/:username/skin`           | `fetchPlayerSkin`                                                             |
-| GET    | `/player/:username/summary`        | `fetchPlayerSummary`                                                          |
-| GET    | `/player/:username/uuid`           | `fetchPlayerUUID`                                                             |
-| GET    | `/player/:input/resolve`           | `resolvePlayer`                                                               |
-| GET    | `/player/:username/exists`         | `playerExists`                                                                |
-| POST   | `/players/batch`                   | `fetchPlayers` (body: `{ usernames, delayMs? }`, max 100)                     |
-| GET    | `/account/namechange`              | requires `Authorization: Bearer <token>`                                      |
-| GET    | `/account/name/:name/availability` | requires `Authorization: Bearer <token>`                                      |
-| POST   | `/account/gift-code/validate`      | requires `Authorization: Bearer <token>`, body `{ code }`                     |
-| GET    | `/account/blocked-servers`         | `fetchBlockedServers`                                                         |
-| GET    | `/server/:address/status`          | `fetchServerStatus`; query: `edition`, `port`, `timeoutMs`, `protocolVersion` |
-| GET    | `/server/:address/icon`            | `fetchServerIcon`; query: `port`, `timeoutMs`, `protocolVersion`              |
+| Method | Path                               | Notes                                                                                     |
+| ------ | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| GET    | `/player/:username`                | `fetchPlayerProfile`                                                                      |
+| GET    | `/player/:username/skin`           | `fetchPlayerSkin`                                                                         |
+| GET    | `/player/:username/summary`        | `fetchPlayerSummary`                                                                      |
+| GET    | `/player/:username/uuid`           | `fetchPlayerUUID`                                                                         |
+| GET    | `/player/:input/resolve`           | `resolvePlayer`                                                                           |
+| GET    | `/player/:username/exists`         | `playerExists`                                                                            |
+| POST   | `/players/batch`                   | `fetchPlayers` (body: `{ usernames, delayMs? }`, max 100)                                 |
+| GET    | `/account/namechange`              | requires `Authorization: Bearer <token>`                                                  |
+| GET    | `/account/name/:name/availability` | requires `Authorization: Bearer <token>`                                                  |
+| POST   | `/account/gift-code/validate`      | requires `Authorization: Bearer <token>`, body `{ code }`                                 |
+| GET    | `/account/blocked-servers`         | `fetchBlockedServers`                                                                     |
+| GET    | `/server/:address/status`          | `fetchServerStatus`; query: `edition`, `port`, `timeoutMs` (max 10000), `protocolVersion` |
+| GET    | `/server/:address/icon`            | `fetchServerIcon`; query: `port`, `timeoutMs` (max 10000), `protocolVersion`              |
 
 > **SSRF warning:** the `/server/:address/status` and `/server/:address/icon` routes accept an arbitrary `address`/`port` from the caller and open a raw socket to it, with no allowlist or private-IP blocking. If you mount this app on a publicly reachable server, anyone can use it to probe your internal network (loopback, RFC1918 ranges, cloud metadata endpoints) via response timing/content. Put these routes behind your own allowlist, auth, or network egress restrictions before exposing them publicly.
 
