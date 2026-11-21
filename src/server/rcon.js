@@ -8,6 +8,8 @@ import { resolveTimeout, makeError } from "./shared.js";
 const PACKET_TYPE_AUTH = 3;
 const PACKET_TYPE_COMMAND = 2;
 const PACKET_TYPE_RESPONSE = 0;
+const MAX_COMMAND_BYTES = 1446;
+const MAX_PACKET_LENGTH = 1_048_576;
 
 export function createRconClient(options = {}) {
   const { host, password, port, timeoutMs } = options;
@@ -105,7 +107,7 @@ export function createRconClient(options = {}) {
 
     socket.on("data", (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
-      let packet = readPacket(buffer);
+      let packet = nextPacket();
 
       while (packet) {
         buffer = buffer.subarray(packet.consumed);
@@ -133,9 +135,25 @@ export function createRconClient(options = {}) {
           }
         }
 
-        packet = readPacket(buffer);
+        packet = nextPacket();
       }
     });
+
+    function nextPacket() {
+      if (closed) {
+        return null;
+      }
+      try {
+        return readPacket(buffer);
+      } catch {
+        teardown(
+          new MinecraftToolkitError(`Invalid RCON packet from ${resolvedHost}:${resolvedPort}`, {
+            statusCode: 502,
+          }),
+        );
+        return null;
+      }
+    }
 
     socket.connect(resolvedPort, resolvedHost, () => {
       socket.write(encodePacket(nextRequestId(), PACKET_TYPE_AUTH, password));
@@ -150,6 +168,13 @@ export function createRconClient(options = {}) {
       if (typeof command !== "string" || command.length === 0) {
         return Promise.reject(
           new MinecraftToolkitError("RCON command must be a non-empty string", {
+            statusCode: 400,
+          }),
+        );
+      }
+      if (Buffer.byteLength(command, "utf8") > MAX_COMMAND_BYTES) {
+        return Promise.reject(
+          new MinecraftToolkitError(`RCON command must not exceed ${MAX_COMMAND_BYTES} bytes`, {
             statusCode: 400,
           }),
         );
@@ -233,7 +258,10 @@ function readPacket(buffer) {
     return null;
   }
   const length = buffer.readInt32LE(0);
-  if (length < 10 || buffer.length < 4 + length) {
+  if (length < 10 || length > MAX_PACKET_LENGTH) {
+    throw new RangeError("Invalid RCON packet length");
+  }
+  if (buffer.length < 4 + length) {
     return null;
   }
   const id = buffer.readInt32LE(4);

@@ -1050,6 +1050,45 @@ describe("rcon client", () => {
     expect(response).toBe("only");
   });
 
+  it("rejects commands over the vanilla size limit", async () => {
+    const server = createMockRconServer("secret");
+    const address = await listenTcp(server);
+
+    const client = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 2000,
+    });
+    const err = await client.execute("a".repeat(1447)).catch((e) => e);
+    expect(await client.execute("a".repeat(1446))).toBe(`echo:${"a".repeat(1446)}`);
+    client.close();
+    server.close();
+
+    expect(err.statusCode).toBe(400);
+  });
+
+  it("rejects a malformed packet from the server", async () => {
+    const server = createServer((socket) => {
+      socket.on("data", () => {
+        const bad = Buffer.alloc(14);
+        bad.writeInt32LE(-50, 0);
+        socket.write(bad);
+      });
+    });
+    const address = await listenTcp(server);
+
+    const err = await createRconClient({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      timeoutMs: 2000,
+    }).catch((e) => e);
+    server.close();
+
+    expect(err.statusCode).toBe(502);
+  });
+
   it("times out a command that gets no response", async () => {
     const server = createServer((socket) => {
       socket.on("data", (chunk) => {
