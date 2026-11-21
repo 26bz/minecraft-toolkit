@@ -159,7 +159,7 @@ export function miniMessageToLegacy(input) {
   return componentToLegacy(miniMessageToComponent(input));
 }
 
-function componentToSegments(component, acc = []) {
+function componentToSegments(component, acc = [], inherited = {}) {
   const list = Array.isArray(component) ? component : [component];
 
   for (const node of list) {
@@ -167,16 +167,23 @@ function componentToSegments(component, acc = []) {
       continue;
     }
     if (typeof node === "string") {
-      acc.push({ text: node });
+      if (node) {
+        acc.push({ text: node, ...inherited });
+      }
       continue;
     }
 
-    const { text = "", extra, ...style } = node;
-    if (text) {
-      acc.push({ text, ...style });
+    const style = { ...inherited };
+    for (const field of ["color", ...FORMAT_FIELDS]) {
+      if (node[field] !== undefined) {
+        style[field] = node[field];
+      }
     }
-    if (extra) {
-      componentToSegments(extra, acc);
+    if (node.text) {
+      acc.push({ text: node.text, ...style });
+    }
+    if (node.extra) {
+      componentToSegments(node.extra, acc, style);
     }
   }
 

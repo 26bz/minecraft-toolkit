@@ -584,6 +584,19 @@ describe("text components", () => {
     expect(legacy).toBe("§c§oHi");
   });
 
+  it("inherits parent style in nested extra components", () => {
+    const component = {
+      text: "a",
+      color: "red",
+      bold: true,
+      extra: [{ text: "b" }, { text: "c", bold: false }, "d"],
+    };
+    expect(componentToLegacy(component)).toBe("§c§la§c§lb§cc§c§ld");
+    expect(componentToMiniMessage({ text: "", color: "green", extra: [{ text: "x" }] })).toBe(
+      "<green>x</green>",
+    );
+  });
+
   it("converts components to and from MiniMessage tags", () => {
     const mini = componentToMiniMessage([{ text: "Hi", color: "red", bold: true }]);
     expect(mini).toBe("<red><bold>Hi</bold></red>");
