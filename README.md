@@ -62,7 +62,7 @@ const resolved = await resolvePlayer("069a79f444e94726a5befca90e38aaf5");
 const skinMeta = await fetchSkinMetadata("26bz");
 ```
 
-Fetch-based helpers run anywhere `fetch` exists (Node 20.3+, Bun, Workers). Node networking and PNG helpers are not edge-safe. All API-style failures surface as `MinecraftToolkitError`.
+Fetch-based helpers run anywhere `fetch` exists (Node 20.3+, Bun, Workers). Node networking and PNG helpers are not edge-safe. All API-style failures surface as `MinecraftToolkitError`. HTTP requests time out after 10 seconds with `statusCode: 504`.
 
 ## Texture & Identity Utilities
 
@@ -294,6 +294,7 @@ client.close();
 
 - `port` defaults to `25575`. Authentication failures (wrong password) throw `MinecraftToolkitError` with `statusCode: 401`; connection/timeout issues surface as `504`/`502`.
 - `client.execute(command)` can be called repeatedly on the same connection; `client.close()` tears down the socket and rejects any in-flight commands.
+- Idle clients stay open. Each command times out after `timeoutMs`, commands over 1446 bytes are rejected with `400`, and long replies split across packets are joined.
 - RCON sends commands and credentials in plaintext — only use it over a trusted network (VPN, SSH tunnel, or localhost), never expose the RCON port directly to the internet.
 
 ## Minecraft Formatting Renderer
