@@ -1,6 +1,6 @@
 {
   "name": "minecraft-toolkit",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Minecraft toolkit for Node.js: Java and Bedrock server status, player UUID and skin lookup, skin head renders, Votifier, RCON, and color code and MiniMessage conversion.",
   "keywords": [
     "bedrock",

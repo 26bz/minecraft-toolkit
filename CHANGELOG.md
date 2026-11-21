@@ -1,5 +1,56 @@
 # Changelog
 
+## v2.2.0
+
+[compare changes](https://github.com/26bz/minecraft-toolkit/compare/v2.1.0...v2.2.0)
+
+### 🔥 Performance
+
+- Resolve fetchPlayerUUID with a single request ([704ab2d](https://github.com/26bz/minecraft-toolkit/commit/704ab2d))
+
+### 🩹 Fixes
+
+- Treat §n and §m as java formats, correct bedrock colors ([df9a78b](https://github.com/26bz/minecraft-toolkit/commit/df9a78b))
+- Support bracketed ipv6 hosts ([efb29d4](https://github.com/26bz/minecraft-toolkit/commit/efb29d4))
+- Keep idle rcon clients open ([59371f0](https://github.com/26bz/minecraft-toolkit/commit/59371f0))
+- Join multi-packet rcon responses ([ca99bb8](https://github.com/26bz/minecraft-toolkit/commit/ca99bb8))
+- Add timeout and abort signal to http requests ([d0d3b67](https://github.com/26bz/minecraft-toolkit/commit/d0d3b67))
+- Inherit parent style in nested text components ([009bbcd](https://github.com/26bz/minecraft-toolkit/commit/009bbcd))
+- Cap probe timeout on h3 server routes ([b58e223](https://github.com/26bz/minecraft-toolkit/commit/b58e223))
+- Serve h3 server icon as image/png ([3a6125c](https://github.com/26bz/minecraft-toolkit/commit/3a6125c))
+- Use protocol 765 for the default 1.20.4 handshake ([a40fba0](https://github.com/26bz/minecraft-toolkit/commit/a40fba0))
+- Cap retry-after delay at maxDelayMs ([e359cb2](https://github.com/26bz/minecraft-toolkit/commit/e359cb2))
+- Wait for full votifier handshake and v2 response lines ([37a1ba5](https://github.com/26bz/minecraft-toolkit/commit/37a1ba5))
+- Require node 20.3+ to match runtime api usage ([4a68401](https://github.com/26bz/minecraft-toolkit/commit/4a68401))
+- Cache falsy values in withCache ([d70c9e7](https://github.com/26bz/minecraft-toolkit/commit/d70c9e7))
+- Bound default response cache to 1000 entries ([73c45e5](https://github.com/26bz/minecraft-toolkit/commit/73c45e5))
+- Reject line breaks in votifier vote fields ([afd3363](https://github.com/26bz/minecraft-toolkit/commit/afd3363))
+- Reject oversized rcon commands and malformed packets ([5fd8743](https://github.com/26bz/minecraft-toolkit/commit/5fd8743))
+- Dedupe batch usernames case-insensitively ([780de98](https://github.com/26bz/minecraft-toolkit/commit/780de98))
+
+### 📖 Documentation
+
+- Note rcon limits and http timeout ([1bd9b0b](https://github.com/26bz/minecraft-toolkit/commit/1bd9b0b))
+- Add security policy ([091f361](https://github.com/26bz/minecraft-toolkit/commit/091f361))
+- Fix license links and add ci badge ([b03a26a](https://github.com/26bz/minecraft-toolkit/commit/b03a26a))
+- Add quick start and clarify intro ([d52ee7d](https://github.com/26bz/minecraft-toolkit/commit/d52ee7d))
+
+### 🏡 Chore
+
+- Exclude generated changelog from format check ([b0538d3](https://github.com/26bz/minecraft-toolkit/commit/b0538d3))
+- Drop deprecated husky setup ([4c4f2c6](https://github.com/26bz/minecraft-toolkit/commit/4c4f2c6))
+- Sharpen package description and keywords ([9c3ecf4](https://github.com/26bz/minecraft-toolkit/commit/9c3ecf4))
+
+### 🤖 CI
+
+- Run lint, format and tests on push and pull requests ([dbb89ce](https://github.com/26bz/minecraft-toolkit/commit/dbb89ce))
+- Publish releases on node 24 ([037b77c](https://github.com/26bz/minecraft-toolkit/commit/037b77c))
+- Test on node 22, 24 and 26 ([721ffdb](https://github.com/26bz/minecraft-toolkit/commit/721ffdb))
+
+### ❤️ Contributors
+
+- 26bz ([@26bz](http://github.com/26bz))
+
 ## v2.1.0
 
 [compare changes](https://github.com/26bz/minecraft-toolkit/compare/v2.0.0...v2.1.0)
