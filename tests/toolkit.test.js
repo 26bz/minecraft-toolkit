@@ -1411,6 +1411,14 @@ describe("validation helpers", () => {
 });
 
 describe("ResponseCache", () => {
+  it("withCache reuses cached falsy values", async () => {
+    const cache = createCache();
+    const resolver = vi.fn().mockResolvedValue(false);
+    expect(await withCache(cache, "exists:nobody", resolver)).toBe(false);
+    expect(await withCache(cache, "exists:nobody", resolver)).toBe(false);
+    expect(resolver).toHaveBeenCalledTimes(1);
+  });
+
   it("stores and retrieves values within TTL", () => {
     const cache = new ResponseCache(5000);
     cache.set("key", "value");

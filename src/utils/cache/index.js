@@ -68,7 +68,7 @@ export async function withCache(cache, key, resolver) {
   }
 
   const cached = cache.get(key);
-  if (cached) {
+  if (cached !== undefined) {
     return cached;
   }
 
