@@ -169,4 +169,16 @@ describe("votifier", () => {
     expect(err.message).toBe("Signature is not valid");
     expect(err.statusCode).toBe(502);
   });
+
+  it("rejects fields containing line breaks", async () => {
+    const err = await sendVotifierVote({
+      host: "127.0.0.1",
+      serviceName: "TestList",
+      username: "26bz\nadmin",
+      address: "198.51.100.42",
+      token: "secret",
+    }).catch((e) => e);
+
+    expect(err.statusCode).toBe(400);
+  });
 });

@@ -54,6 +54,11 @@ export async function sendVotifierVote(options = {}) {
   if (!sanitizedAddress) {
     throw new MinecraftToolkitError("Voter IP address cannot be empty", { statusCode: 400 });
   }
+  if ([sanitizedService, normalizedUsername, sanitizedAddress].some((v) => /[\r\n]/.test(v))) {
+    throw new MinecraftToolkitError("Votifier fields must not contain line breaks", {
+      statusCode: 400,
+    });
+  }
 
   const resolvedPort = Number.isInteger(port) ? validatePort(port) : DEFAULT_VOTIFIER_PORT;
   const resolvedTimeout = resolveTimeout(timeoutMs);
