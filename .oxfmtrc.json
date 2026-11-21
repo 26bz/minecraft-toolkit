@@ -6,5 +6,5 @@
   "singleQuote": false,
   "trailingComma": "all",
   "insertFinalNewline": true,
-  "ignorePatterns": ["dist/**", "coverage/**"]
+  "ignorePatterns": ["dist/**", "coverage/**", "CHANGELOG.md"]
 }
