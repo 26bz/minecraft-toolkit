@@ -226,8 +226,7 @@ function readProbeQuery(query) {
   const port = typeof query.port === "string" ? validatePort(query.port) : undefined;
   const parsedTimeout =
     typeof query.timeoutMs === "string" ? Number.parseInt(query.timeoutMs, 10) : undefined;
-  const timeoutMs =
-    parsedTimeout > 0 ? Math.min(parsedTimeout, MAX_PROBE_TIMEOUT_MS) : undefined;
+  const timeoutMs = parsedTimeout > 0 ? Math.min(parsedTimeout, MAX_PROBE_TIMEOUT_MS) : undefined;
   const protocolVersion =
     typeof query.protocolVersion === "string"
       ? Number.parseInt(query.protocolVersion, 10)
