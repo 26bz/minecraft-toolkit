@@ -630,9 +630,15 @@ describe("network parsing", () => {
   it("parses bracketed IPv6 host with port", async () => {
     const { resolveAddress } = await import("../src/utils/network.js");
     expect(resolveAddress("[::1]:25565", undefined, 25565)).toEqual({
-      host: "[::1]",
+      host: "::1",
       port: 25565,
     });
+  });
+
+  it("strips brackets from IPv6 hosts without an embedded port", async () => {
+    const { resolveAddress } = await import("../src/utils/network.js");
+    expect(resolveAddress("[::1]", undefined, 25565)).toEqual({ host: "::1", port: 25565 });
+    expect(resolveAddress("[::1]", 19132, 25565)).toEqual({ host: "::1", port: 19132 });
   });
 
   it("prefers an explicit override port and passes the host through verbatim", async () => {
@@ -772,6 +778,46 @@ describe("server status transports", () => {
     server.close();
 
     expect(status.edition).toBe("java");
+  });
+
+  it("connects to a bracketed IPv6 Java address", async () => {
+    const server = createServer((socket) => {
+      let seenRequest = false;
+      socket.on("data", () => {
+        if (!seenRequest) {
+          seenRequest = true;
+          socket.write(buildJavaStatusResponse());
+          return;
+        }
+        socket.write(buildJavaPongPacket());
+        socket.end();
+      });
+    });
+    await new Promise((resolve) => server.listen(0, "::1", resolve));
+
+    const status = await fetchJavaServerStatus(`[::1]:${server.address().port}`, {
+      timeoutMs: 2000,
+    });
+    server.close();
+
+    expect(status.host).toBe("::1");
+    expect(status.motd).toBe("Toolkit Test Server");
+  });
+
+  it("queries a Bedrock server over IPv6", async () => {
+    const socket = createSocket("udp6");
+    socket.on("message", (_message, rinfo) => {
+      socket.send(buildBedrockStatusMessage(rinfo.port), rinfo.port, rinfo.address);
+    });
+    await new Promise((resolve) => socket.bind(0, "::1", resolve));
+
+    const status = await fetchBedrockServerStatus(`[::1]:${socket.address().port}`, {
+      timeoutMs: 2000,
+    });
+    socket.close();
+
+    expect(status.host).toBe("::1");
+    expect(status.motd).toBe("Toolkit Bedrock Server");
   });
 
   it("rejects invalid server edition", async () => {

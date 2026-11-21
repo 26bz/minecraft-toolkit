@@ -2,10 +2,10 @@ import { validatePort } from "./validation.js";
 
 export function resolveAddress(address, overridePort, fallbackPort) {
   if (overridePort !== undefined && overridePort !== null) {
-    return { host: address, port: validatePort(overridePort) };
+    return { host: unbracket(address), port: validatePort(overridePort) };
   }
 
-  const bracketed = address.match(/^(\[[^\]]+\]):(\d+)$/);
+  const bracketed = address.match(/^\[([^\]]+)\]:(\d+)$/);
   if (bracketed) {
     return { host: bracketed[1], port: validatePort(bracketed[2]) };
   }
@@ -20,5 +20,10 @@ export function resolveAddress(address, overridePort, fallbackPort) {
     }
   }
 
-  return { host: address, port: fallbackPort };
+  return { host: unbracket(address), port: fallbackPort };
+}
+
+function unbracket(host) {
+  const match = host.match(/^\[([^\]]+)\]$/);
+  return match ? match[1] : host;
 }

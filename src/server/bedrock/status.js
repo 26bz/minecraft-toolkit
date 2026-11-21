@@ -1,4 +1,5 @@
 import { createSocket } from "node:dgram";
+import { isIPv6 } from "node:net";
 import { randomBytes } from "node:crypto";
 import { DEFAULT_BEDROCK_PORT, RAKNET_MAGIC } from "../../constants.js";
 import { MinecraftToolkitError } from "../../errors.js";
@@ -12,7 +13,7 @@ export async function fetchBedrockServerStatus(address, options = {}) {
   const timeoutMs = resolveTimeout(options.timeoutMs);
 
   return new Promise((resolve, reject) => {
-    const socket = createSocket("udp4");
+    const socket = createSocket(isIPv6(host) ? "udp6" : "udp4");
     let settled = false;
 
     const timestamp = BigInt(Date.now());
