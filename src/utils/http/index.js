@@ -110,7 +110,7 @@ export async function withRetry(fn, options = {}) {
         typeof error.retryAfter === "number" && Number.isFinite(error.retryAfter)
           ? error.retryAfter * 1000
           : null;
-      const delayMs = retryAfterMs ?? Math.min(maxDelayMs, minDelayMs * 2 ** attempt);
+      const delayMs = Math.min(maxDelayMs, retryAfterMs ?? minDelayMs * 2 ** attempt);
 
       attempt += 1;
       onRetry?.({ attempt, delayMs, error });

@@ -1168,6 +1168,23 @@ describe("withRetry", () => {
     expect(attempts).toBe(3);
   });
 
+  it("caps a large retry-after at maxDelayMs", async () => {
+    const delays = [];
+    let attempts = 0;
+    await withRetry(
+      async () => {
+        attempts += 1;
+        if (attempts < 2) {
+          throw new MinecraftToolkitError("rate limited", { statusCode: 429, retryAfter: 3600 });
+        }
+        return "ok";
+      },
+      { maxDelayMs: 5, onRetry: ({ delayMs }) => delays.push(delayMs) },
+    );
+
+    expect(delays).toEqual([5]);
+  });
+
   it("gives up after exhausting the retry budget", async () => {
     let attempts = 0;
     const err = await withRetry(
