@@ -89,7 +89,7 @@
     "*.{js,jsx,ts,tsx,mjs,cjs}": "pnpm run lint"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.3.0"
   },
   "packageManager": "pnpm@10.30.2",
   "pnpm": {

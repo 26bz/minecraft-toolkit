@@ -62,7 +62,7 @@ const resolved = await resolvePlayer("069a79f444e94726a5befca90e38aaf5");
 const skinMeta = await fetchSkinMetadata("26bz");
 ```
 
-Fetch-based helpers run anywhere `fetch` exists (Node 18+, Bun, Workers). Node networking and PNG helpers are not edge-safe. All API-style failures surface as `MinecraftToolkitError`.
+Fetch-based helpers run anywhere `fetch` exists (Node 20.3+, Bun, Workers). Node networking and PNG helpers are not edge-safe. All API-style failures surface as `MinecraftToolkitError`.
 
 ## Texture & Identity Utilities
 
