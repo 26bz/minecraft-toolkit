@@ -193,6 +193,8 @@ function createMockRconServer(password) {
           );
         } else if (packet.type === 2) {
           socket.write(encodeRconPacket(packet.id, 0, `echo:${packet.body}`));
+        } else {
+          socket.write(encodeRconPacket(packet.id, 0, `Unknown request ${packet.type}`));
         }
         packet = readRconPacket(buffer);
       }
@@ -968,6 +970,70 @@ describe("rcon client", () => {
     expect(await client.execute("list")).toBe("echo:list");
     client.close();
     server.close();
+  });
+
+  it("joins responses split across multiple packets", async () => {
+    const server = createServer((socket) => {
+      let buffer = Buffer.alloc(0);
+      socket.on("data", (chunk) => {
+        buffer = Buffer.concat([buffer, chunk]);
+        let packet = readRconPacket(buffer);
+        while (packet) {
+          buffer = buffer.subarray(packet.consumed);
+          if (packet.type === 3) {
+            socket.write(encodeRconPacket(packet.id, 2, ""));
+          } else if (packet.type === 2) {
+            socket.write(
+              Buffer.concat([
+                encodeRconPacket(packet.id, 0, "a".repeat(4096)),
+                encodeRconPacket(packet.id, 0, "tail"),
+              ]),
+            );
+          } else {
+            socket.write(encodeRconPacket(packet.id, 0, "Unknown request 0"));
+          }
+          packet = readRconPacket(buffer);
+        }
+      });
+    });
+    const address = await listenTcp(server);
+
+    const response = await sendRconCommand({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      command: "help",
+      timeoutMs: 2000,
+    });
+    server.close();
+
+    expect(response).toBe(`${"a".repeat(4096)}tail`);
+  });
+
+  it("returns collected output when the server ignores the end marker", async () => {
+    const server = createServer((socket) => {
+      socket.on("data", (chunk) => {
+        const type = chunk.readInt32LE(8);
+        const id = chunk.readInt32LE(4);
+        if (type === 3) {
+          socket.write(encodeRconPacket(id, 2, ""));
+        } else if (type === 2) {
+          socket.write(encodeRconPacket(id, 0, "only"));
+        }
+      });
+    });
+    const address = await listenTcp(server);
+
+    const response = await sendRconCommand({
+      host: "127.0.0.1",
+      port: address.port,
+      password: "secret",
+      command: "list",
+      timeoutMs: 200,
+    });
+    server.close();
+
+    expect(response).toBe("only");
   });
 
   it("times out a command that gets no response", async () => {

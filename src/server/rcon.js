@@ -37,6 +37,7 @@ export function createRconClient(options = {}) {
     let buffer = Buffer.alloc(0);
     let requestCounter = 1;
     const pending = new Map();
+    const markers = new Map();
 
     function nextRequestId() {
       requestCounter = requestCounter >= 0x7fffffff ? 1 : requestCounter + 1;
@@ -49,6 +50,18 @@ export function createRconClient(options = {}) {
         request.reject(error);
       }
       pending.clear();
+      markers.clear();
+    }
+
+    function finishRequest(id) {
+      const request = pending.get(id);
+      if (!request) {
+        return;
+      }
+      pending.delete(id);
+      markers.delete(request.markerId);
+      clearTimeout(request.timer);
+      request.resolve(request.chunks.join(""));
     }
 
     function settleConnect(fn, value) {
@@ -113,11 +126,10 @@ export function createRconClient(options = {}) {
             settleConnect(resolve, { execute: executeCommand, close: closeClient });
           }
         } else {
-          const request = pending.get(packet.id);
-          if (request) {
-            pending.delete(packet.id);
-            clearTimeout(request.timer);
-            request.resolve(packet.body);
+          if (markers.has(packet.id)) {
+            finishRequest(markers.get(packet.id));
+          } else {
+            pending.get(packet.id)?.chunks.push(packet.body);
           }
         }
 
@@ -145,8 +157,15 @@ export function createRconClient(options = {}) {
 
       return new Promise((resolveCommand, rejectCommand) => {
         const id = nextRequestId();
+        const markerId = nextRequestId();
         const timer = setTimeout(() => {
+          const request = pending.get(id);
+          if (request?.chunks.length) {
+            finishRequest(id);
+            return;
+          }
           pending.delete(id);
+          markers.delete(markerId);
           rejectCommand(
             new MinecraftToolkitError(
               `Timed out waiting for RCON response from ${resolvedHost}:${resolvedPort}`,
@@ -154,10 +173,19 @@ export function createRconClient(options = {}) {
             ),
           );
         }, resolvedTimeout);
-        pending.set(id, { resolve: resolveCommand, reject: rejectCommand, timer });
-        socket.write(encodePacket(id, PACKET_TYPE_COMMAND, command), (writeError) => {
+        pending.set(id, {
+          resolve: resolveCommand,
+          reject: rejectCommand,
+          timer,
+          markerId,
+          chunks: [],
+        });
+        markers.set(markerId, id);
+        socket.write(encodePacket(id, PACKET_TYPE_COMMAND, command));
+        socket.write(encodePacket(markerId, PACKET_TYPE_RESPONSE, ""), (writeError) => {
           if (writeError) {
             pending.delete(id);
+            markers.delete(markerId);
             clearTimeout(timer);
             rejectCommand(makeError("Failed to send RCON command", writeError));
           }
