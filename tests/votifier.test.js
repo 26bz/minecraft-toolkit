@@ -116,4 +116,57 @@ describe("votifier", () => {
     expect(capturedPacket).toBeInstanceOf(Buffer);
     expect(result).toEqual({ acknowledged: true, version: "2", protocol: "v2" });
   });
+
+  it("waits for a handshake line split across packets", async () => {
+    let challenge = null;
+    const server = createServer((socket) => {
+      socket.write("VOTIFIER 2 abc");
+      setTimeout(() => socket.write("def123\n"), 20);
+      socket.once("data", (packet) => {
+        const message = JSON.parse(packet.subarray(4).toString("utf8"));
+        challenge = JSON.parse(message.payload).challenge;
+        socket.write('{"status":');
+        setTimeout(() => socket.write('"ok"}\r\n'), 20);
+      });
+    });
+    const addressInfo = await listenAsync(server);
+
+    const result = await sendVotifierVote({
+      host: "127.0.0.1",
+      port: addressInfo.port,
+      serviceName: "TestList",
+      username: "26bz",
+      address: "198.51.100.42",
+      token: "secret",
+      protocol: "v2",
+    });
+    server.close();
+
+    expect(challenge).toBe("abcdef123");
+    expect(result).toEqual({ acknowledged: true, version: "2", protocol: "v2" });
+  });
+
+  it("rejects a v2 error response", async () => {
+    const server = createServer((socket) => {
+      socket.write("VOTIFIER 2 abc123\n");
+      socket.once("data", () => {
+        socket.write('{"status":"error","errorMessage":"Signature is not valid"}\r\n');
+      });
+    });
+    const addressInfo = await listenAsync(server);
+
+    const err = await sendVotifierVote({
+      host: "127.0.0.1",
+      port: addressInfo.port,
+      serviceName: "TestList",
+      username: "26bz",
+      address: "198.51.100.42",
+      token: "secret",
+      protocol: "v2",
+    }).catch((e) => e);
+    server.close();
+
+    expect(err.message).toBe("Signature is not valid");
+    expect(err.statusCode).toBe(502);
+  });
 });

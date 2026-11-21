@@ -101,6 +101,7 @@ export async function sendVotifierVote(options = {}) {
     let reportedVersion = null;
     let voteDispatched = false;
     let selectedProtocol = normalizedProtocol === "auto" ? null : normalizedProtocol;
+    let v2Response = null;
 
     function cleanup() {
       socket.removeAllListeners();
@@ -146,8 +147,13 @@ export async function sendVotifierVote(options = {}) {
 
     socket.on("data", (chunk) => {
       handshakeBuffer = Buffer.concat([handshakeBuffer, chunk]);
-      const handshakeText = handshakeBuffer.toString("utf8").trim();
+      const newline = handshakeBuffer.indexOf(0x0a);
+      if (newline === -1) {
+        return;
+      }
+      const handshakeText = handshakeBuffer.subarray(0, newline).toString("utf8").trim();
       if (!handshakeText.startsWith(HANDSHAKE_PREFIX)) {
+        rejectOnce(new MinecraftToolkitError("Invalid Votifier handshake", { statusCode: 502 }));
         return;
       }
       handshakeReceived = true;
@@ -189,6 +195,10 @@ export async function sendVotifierVote(options = {}) {
       if (settled) {
         return;
       }
+      if (v2Response?.length) {
+        handleV2Response(v2Response.toString("utf8"));
+        return;
+      }
       if (!handshakeReceived || !voteDispatched) {
         rejectOnce(
           new MinecraftToolkitError("Connection closed before Votifier vote was sent", {
@@ -205,6 +215,26 @@ export async function sendVotifierVote(options = {}) {
     });
 
     socket.connect(resolvedPort, normalizedHost);
+
+    function handleV2Response(text) {
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseError) {
+        rejectOnce(makeError("Invalid Votifier v2 response", parseError));
+        return;
+      }
+      if (parsed?.status === "error") {
+        rejectOnce(
+          new MinecraftToolkitError(parsed.errorMessage || "Votifier v2 error", {
+            cause: parsed,
+            statusCode: 502,
+          }),
+        );
+        return;
+      }
+      resolveOnce({ acknowledged: true, version: reportedVersion, protocol: PROTOCOL_V2 });
+    }
 
     function sendVote(challengeSegment) {
       socket.removeAllListeners("data");
@@ -224,21 +254,12 @@ export async function sendVotifierVote(options = {}) {
               rejectOnce(makeError("Failed to deliver Votifier v2 payload", writeError));
               return;
             }
-            socket.once("data", (response) => {
-              try {
-                const parsed = JSON.parse(response.toString("utf8"));
-                if (parsed?.status === "error") {
-                  rejectOnce(
-                    new MinecraftToolkitError(parsed.errorMessage || "Votifier v2 error", {
-                      cause: parsed,
-                      statusCode: 502,
-                    }),
-                  );
-                } else {
-                  socket.end();
-                }
-              } catch (parseError) {
-                rejectOnce(makeError("Invalid Votifier v2 response", parseError));
+            v2Response = Buffer.alloc(0);
+            socket.on("data", (chunk) => {
+              v2Response = Buffer.concat([v2Response, chunk]);
+              const newline = v2Response.indexOf(0x0a);
+              if (newline !== -1) {
+                handleV2Response(v2Response.subarray(0, newline).toString("utf8"));
               }
             });
           });
